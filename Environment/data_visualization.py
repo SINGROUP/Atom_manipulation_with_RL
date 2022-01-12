@@ -11,17 +11,17 @@ def circle(x, y, r, p = 100):
         y_.append(y+r*np.sin(2*i*np.pi/p))
     return x_, y_
 
-def plot_graph(reward, precision, alpha, episode_len):
+def plot_graph(reward, precision, alpha, episode_len, avg__rewards, avg_alphas, avg_precisions, avg_episode_lengths):
     clear_output(wait=True) 
-    _, ((ax, ax1), (ax2, ax3)) = plt.subplots(2, 2)
-    ax_plot_graph(reward, ax, 'Episode reward')
-    ax_plot_graph(precision, ax1, 'Precision (nm)')
-    ax_plot_graph(alpha, ax2, 'alpha')
-    ax_plot_graph(episode_len, ax3, 'Episode lengths')
+    _, ((ax, ax1), (ax2, ax3)) = plt.subplots(2, 2, figsize=(12,8))
+    ax_plot_graph(reward, avg__rewards, ax, 'Episode reward')
+    ax_plot_graph(precision, avg_precisions, ax1, 'Precision (nm)')
+    ax_plot_graph(alpha, avg_alphas, ax2, 'alpha')
+    ax_plot_graph(episode_len, avg_episode_lengths, ax3, 'Episode lengths')
     plt.show()
 
-def ax_plot_graph(data, ax, y_label):
-    avg_data = np.mean(data[-min(100, len(data)):])
+def ax_plot_graph(data, avg_data, ax, y_label):
+
     df = pd.DataFrame({'x': range(len(data)), 'data': data, 'average': avg_data})
     ax.plot(df['x'], df['data'], marker='', color='silver', linewidth=0.8, alpha=0.9)
     ax.plot(df['x'], df['average'], marker='', color='DodgerBlue', linewidth=1, alpha=0.9)
@@ -45,7 +45,8 @@ def show_reset(img_info, atom_start_position, destination_position, template_nm 
     plt.legend(frameon=False, labelcolor= 'white')
     plt.show()
 
-def show_done(img_info, atom_position, atom_start_position, destination_position, reward, new_destination_absolute_nm = None, template_nm = None, template_wh = None):
+def show_done(img_info, atom_position, atom_start_position, destination_position, reward,
+              template_nm = None, template_wh = None):
     img = img_info['img_forward']
     offset_nm = img_info['offset_nm']
     len_nm = img_info['len_nm']
@@ -58,9 +59,6 @@ def show_done(img_info, atom_position, atom_start_position, destination_position
     ax.scatter(atom_start_position[0], atom_start_position[1], s = 20, linewidths=3, edgecolors='#33dbff', color = None, label='start')
     ax.scatter(destination_position[0], destination_position[1], s = 20, linewidths=3, edgecolors='#75ff33', color = None, label='gaol')
     ax.scatter(atom_position[0], atom_position[1], s = 20, linewidths=3, edgecolors='#ff5733', color = None, label='atom')
-
-    if new_destination_absolute_nm is not None:
-        ax.scatter(new_destination_absolute_nm[0], new_destination_absolute_nm[1], s = 20, linewidths=3, edgecolors='gray', color = 'gray', label='new destination')
 
     ax.text(offset_nm[0], offset_nm[1],'reward: {}'.format(reward), ha='center')
     plt.legend(frameon=False, labelcolor= 'white')

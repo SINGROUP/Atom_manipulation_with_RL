@@ -74,6 +74,7 @@ class AtomJumpDetector_conv:
         self.conv = CONV(data_len, 64, 4, 4, 2, 1)
         
         if load_weight is not None:
+            print('Load cnn weight')
             self.load_weight(load_weight)
 
         self.optim = Adam(self.conv.parameters(),lr=1e-3)
@@ -88,6 +89,7 @@ class AtomJumpDetector_conv:
         self.atom_move_by_val.append(atom_move_by)
     
     def train(self):
+        print('Training convnet')
         dset = conv_dataset(self.currents, self.atom_move_by, self.move_threshold, make_same_len=True)
 
         dataloader = DataLoader(dset, batch_size=self.batch_size,
@@ -114,16 +116,17 @@ class AtomJumpDetector_conv:
             prediction = torch.squeeze(self.conv(current.float())).detach().numpy()>0.5
         accuracy = cal_accuracy(am, prediction)
         cm = confusion_matrix(am, prediction, normalize='pred')
-        print('Validation over {} ({}) data. Accuracy: {}, True positive: {}, True negative: {}'.format(len(dset),am.shape, accuracy, cm[1,1], cm[0,0]))
-  
+        print('Validation over {} ({}) data. Accuracy: {}, True positive: {}, True negative: {}'.format(len(dset), am.shape, accuracy, cm[1,1], cm[0,0]))
+        return cm[1,1], cm[0,0]
     def predict(self, current):
         dset = conv_dataset([current], [True], self.move_threshold)
         dataloader = DataLoader(dset, batch_size=len(dset),
                         shuffle=True, num_workers=0)
         for _, sample_batched in enumerate(dataloader):
             current = sample_batched['current']
-            prediction = torch.squeeze(self.conv(current.float())).detach().numpy()>0.5
-        return prediction
+            prediction = torch.squeeze(self.conv(current.float())).detach().numpy()
+            print('Prediction:', prediction)
+        return prediction>0.5, prediction
     
     def load_weight(self, load_weight):
         self.conv.load_state_dict(torch.load(load_weight))

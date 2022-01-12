@@ -14,7 +14,7 @@ from Environment.atom_jump_detection import AtomJumpDetector_conv
 class RealExpEnv:
     
     def __init__(self, step_nm, max_mvolt, max_pcurrent_to_mvolt_ratio, goal_nm, template, current_jump, im_size_nm, offset_nm,
-                 manip_limit_nm, pixel, template_max_y, scan_mV, max_len, correct_drift = False, bottom = True):
+                 manip_limit_nm, pixel, template_max_y, scan_mV, max_len, load_weight, random_scan_rate = 0.5,  correct_drift = False, bottom = True):
         
         self.step_nm = step_nm
         self.max_mvolt = max_mvolt
@@ -42,14 +42,14 @@ class RealExpEnv:
         self.lattice_constant = 0.28
         self.precision_lim = self.lattice_constant*np.sqrt(3)/3
         self.bottom = bottom
-        self.atom_move_detector = AtomJumpDetector_conv(data_len=2048)
+        self.atom_move_detector = AtomJumpDetector_conv(data_len=2048, load_weight = load_weight)
+        self.random_scan_rate = random_scan_rate
     def reset(self):
         self.len = 0
 
         if len(self.atom_move_detector.currents_val)>self.atom_move_detector.batch_size:
-            self.atom_move_detector.eval()
+            true_positive, true_negative = self.atom_move_detector.eval()
             self.atom_move_detector.train()
-
 
         if (self.atom_absolute_nm is None) or (self.atom_relative_nm is None):
             self.atom_absolute_nm, self.atom_relative_nm = self.scan_atom()
@@ -90,7 +90,7 @@ class RealExpEnv:
 
         next_state = np.concatenate((self.goal, (self.atom_absolute_nm -self.atom_start_absolute_nm)/self.goal_nm))
         new_potential = self.calculate_potential(next_state)
-        reward = self.default_reward_done*done + self.default_reward*(1-done) + new_potential - self.old_potential
+        reward = self.default_reward_done*(self.dist_destination<self.precision_lim) + self.default_reward*(self.dist_destination<self.precision_lim) + new_potential - self.old_potential
         self.old_potential = new_potential
         print('potential:', self.old_potential)
         info |= {'potential:': self.old_potential, 'dist_destination':self.dist_destination,
@@ -154,25 +154,36 @@ class RealExpEnv:
         mvolt = np.clip(action[4], a_min = None, a_max=1)*self.max_mvolt
         pcurrent = np.clip(action[5], a_min = None, a_max=1)*self.max_pcurrent_to_mvolt_ratio*mvolt
         return x_start_nm , y_start_nm, x_end_nm, y_end_nm, mvolt, pcurrent
-    
-    def detect_current_jump(self, current):
-        '''if current is not None:
+
+    def old_detect_current_jump(self, current):
+        if current is not None:
             diff = findiff.FinDiff(0,1,acc=6)(current)[3:-3]
             return np.sum(np.abs(diff)>self.current_jump*np.std(current)) > 2
         else:
-            return False'''
+            return False
+
+    def detect_current_jump(self, current):
+        old_prediction = self.old_detect_current_jump(current)
+        print('Old prediction:', old_prediction)
+        success, prediction = self.atom_move_detector.predict(current)
         if current is not None:
-            if self.atom_move_detector.predict(current):
+            if success:
                 print('cnn thinks there is atom movement')
                 return True
-            elif np.random.random()>0.9:
-                print('cnn thinks there is NOT atom movement, but scan anyway')
+            elif old_prediction:
+                print('old prediction thinks there is atom movement')
+                return True
+            elif (np.random.random()>0.5) and (prediction>0.2):
+                print('Random scan')
+                return True
+            elif np.random.random()>0.5:
+                print('Random scan')
                 return True
             else:
-                print('cnn thinks there is NOT atom movement, so no scan')
+                print('CNN and old prediction both say no movement')
                 return False
         else:
-            print('cnn thinks there is NOT atom movement, so no scan')
+            print('CNN and old prediction both say no movement')
             return False
         
     def step_latman(self, x_start_nm, y_start_nm, x_end_nm, y_end_nm, mvoltage, pcurrent):
