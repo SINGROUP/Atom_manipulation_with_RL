@@ -10,7 +10,7 @@ from torch.optim import Adam
 from sklearn.metrics import confusion_matrix, f1_score
 
 def cal_accuracy(y_true, y_pred):
-    return (y_true == y_pred).sum().item()/ y_true.size(0)
+    return (y_true == y_pred).sum().item()/ y_true.shape[0]
 
 class conv_dataset(Dataset):
     def __init__(self, currents, atom_move_by, move_threshold, length=2048):
