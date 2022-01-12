@@ -44,11 +44,16 @@ class RealExpEnv:
         self.bottom = bottom
         self.atom_move_detector = AtomJumpDetector_conv(data_len=2048, load_weight = load_weight)
         self.random_scan_rate = random_scan_rate
+        self.accuracy, self.true_positive, self.true_negative = [], [], []
+
     def reset(self):
         self.len = 0
 
         if len(self.atom_move_detector.currents_val)>self.atom_move_detector.batch_size:
-            true_positive, true_negative = self.atom_move_detector.eval()
+            accuracy, true_positive, true_negative = self.atom_move_detector.eval()
+            self.accuracy.append(accuracy)
+            self.true_positive.append(true_positive)
+            self.true_negative.append(true_negative)
             self.atom_move_detector.train()
 
         if (self.atom_absolute_nm is None) or (self.atom_relative_nm is None):
@@ -90,7 +95,7 @@ class RealExpEnv:
 
         next_state = np.concatenate((self.goal, (self.atom_absolute_nm -self.atom_start_absolute_nm)/self.goal_nm))
         new_potential = self.calculate_potential(next_state)
-        reward = self.default_reward_done*(self.dist_destination<self.precision_lim) + self.default_reward*(self.dist_destination<self.precision_lim) + new_potential - self.old_potential
+        reward = self.default_reward_done*(self.dist_destination<self.precision_lim) + self.default_reward*(self.dist_destination>self.precision_lim) + new_potential - self.old_potential
         self.old_potential = new_potential
         print('potential:', self.old_potential)
         info |= {'potential:': self.old_potential, 'dist_destination':self.dist_destination,

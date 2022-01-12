@@ -117,7 +117,7 @@ class AtomJumpDetector_conv:
         accuracy = cal_accuracy(am, prediction)
         cm = confusion_matrix(am, prediction, normalize='pred')
         print('Validation over {} ({}) data. Accuracy: {}, True positive: {}, True negative: {}'.format(len(dset), am.shape, accuracy, cm[1,1], cm[0,0]))
-        return cm[1,1], cm[0,0]
+        return accuracy, cm[1,1], cm[0,0]
     def predict(self, current):
         dset = conv_dataset([current], [True], self.move_threshold)
         dataloader = DataLoader(dset, batch_size=len(dset),
