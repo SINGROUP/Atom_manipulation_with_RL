@@ -52,7 +52,9 @@ def blob_detection(img):
     #pdb.set_trace()
     #plt.imshow(img)
     params = cv2.SimpleBlobDetector_Params()
-    #params.filterByInertia = True
+    params.filterByInertia = False
+    params.filterByCircularity = False
+    params.filterByConvexity = False
     #params.minInertiaRatio = 0.7
     params.maxThreshold = 255
     params.minThreshold = 50

@@ -34,35 +34,20 @@ class HerReplayMemory(ReplayMemory):
         N = len(self.buffer)
         if c_k>N:
             c_k = N
-        indices = np.random.choice(c_k, int(batch_size/self.n_sampled_goal))
+        indices = np.random.choice(c_k, int(batch_size))
         batch = []
         for idx in indices:
             batch.append(self.buffer[idx])
             state, action, reward, next_state, mask = self.buffer[idx]
-            '''print('old state:', state, 'old next state:', next_state, 'old reward:', reward)
-            i = copy.copy(idx)   
-            while True:
-                _,_,_,n,m = self.buffer[i]
-                i-=1
-                if not m:
-                    new_goal = n[:2]
-                    break'''
-            #state[:2] = new_goal
-            #next_state[:2] = new_goal
-            #old_value = self.calculate_value(state)
-            #new_value = self.calculate_value(next_state)
-            #reward = self.env.default_reward + new_value - old_value
-            #achieved_goal = next_state[2:]
-            if isinstance(next_state, dict):
-                final_idx = self.sample_goals(idx)
-                _, _, _, final_next_state, _ = self.buffer[final_idx]
-                new_next_state = copy.copy(next_state)
-                new_state = copy.copy(state)
-                new_next_state['desired_goal'] = final_next_state['achieved_goal']
-                new_state['desired_goal'] = final_next_state['achieved_goal']
-                achieved_goal = new_next_state['achieved_goal']
-                desired_goal = new_next_state['desired_goal']
-                new_reward = self.env.compute_reward(achieved_goal, desired_goal, None)
+            #print('old state:', state, 'old next state:', next_state, 'old reward:', reward)
+
+            final_idx = self.sample_goals(idx)
+            _, _, _, final_next_state, _ = self.buffer[final_idx]
+            new_next_state = copy.copy(next_state)
+            new_state = copy.copy(state)
+            new_state[:2] = final_next_state[2:]
+            new_next_state[:2] = final_next_state[2:]
+            new_reward = self.env.compute_reward(new_state, new_next_state)
             batch.append((new_state, action, new_reward, new_next_state, mask))
         state, action, reward, next_state, mask = map(np.stack,zip(*batch))
         return state, action, reward, next_state, mask
@@ -246,13 +231,4 @@ class sac_agent():
         
         soft_update(self.critic_target,self.critic,self.tau)
 
-    def feature_extractor(state):
-        if isinstance(state, np.ndarray):
-            states = []
-            for s in state:
-                state_flat = np.concatenate((s['observation'], s['desired_goal']),-1)
-                states.append(state_flat)
-            return np.vstack(states)
-        else:
-            return np.concatenate((state['observation'], state['desired_goal']),-1)
 

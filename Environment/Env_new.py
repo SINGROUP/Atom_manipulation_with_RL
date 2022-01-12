@@ -69,13 +69,13 @@ class RealExpEnv:
         self.atom_start_absolute_nm, self.atom_start_relative_nm = self.atom_absolute_nm, self.atom_relative_nm
         self.destination_relative_nm, self.destination_absolute_nm, self.goal = self.get_destination(self.atom_start_relative_nm, self.atom_start_absolute_nm, goal_nm)
         
-        state = np.concatenate((self.goal, (self.atom_absolute_nm - self.atom_start_absolute_nm)/self.goal_nm))
+        self.state = np.concatenate((self.goal, (self.atom_absolute_nm - self.atom_start_absolute_nm)/self.goal_nm))
         self.dist_destination = goal_nm
-        self.old_potential = self.calculate_potential(state)
+
         info = {'start_absolute_nm':self.atom_start_absolute_nm, 'start_relative_nm':self.atom_start_relative_nm, 'goal_absolute_nm':self.destination_absolute_nm, 
                 'goal_relative_nm':self.destination_relative_nm, 'start_absolute_nm_f':self.atom_absolute_nm_f, 'start_absolute_nm_b':self.atom_absolute_nm_b, 
-                'start_relative_nm_f':self.atom_relative_nm_f, 'start_relative_nm_b':self.atom_relative_nm_b, 'potential':self.old_potential}
-        return state, info
+                'start_relative_nm_f':self.atom_relative_nm_f, 'start_relative_nm_b':self.atom_relative_nm_b}
+        return self.state, info
     
     def step(self, action):
         x_start_nm , y_start_nm, x_end_nm, y_end_nm, mvolt, pcurrent = self.action_to_latman_input(action)
@@ -90,24 +90,29 @@ class RealExpEnv:
         if done or jump:
             self.dist_destination, dist_start, dist_last = self.check_similarity()
             print('atom moves by:', dist_start)
-            done = done or (dist_start > 1.5*self.goal_nm) or (self.dist_destination < self.precision_lim)
+            done = done or (dist_start > 1.5*self.goal_nm) or (self.dist_destination < self.precision_lim) or self.out_of_range(self.atom_absolute_nm, self.manip_limit_nm)
             self.atom_move_detector.push(current_series, dist_last)
 
         next_state = np.concatenate((self.goal, (self.atom_absolute_nm -self.atom_start_absolute_nm)/self.goal_nm))
-        new_potential = self.calculate_potential(next_state)
-        reward = self.default_reward_done*(self.dist_destination<self.precision_lim) + self.default_reward*(self.dist_destination>self.precision_lim) + new_potential - self.old_potential
-        self.old_potential = new_potential
-        print('potential:', self.old_potential)
-        info |= {'potential:': self.old_potential, 'dist_destination':self.dist_destination,
+        reward = self.compute_reward(self.state, next_state)
+
+        info |= {'dist_destination':self.dist_destination,
                 'atom_absolute_nm':self.atom_absolute_nm, 'atom_relative_nm':self.atom_relative_nm, 'atom_absolute_nm_f':self.atom_absolute_nm_f,
                 'atom_relative_nm_f' : self.atom_relative_nm_f, 'atom_absolute_nm_b': self.atom_absolute_nm_b, 'atom_relative_nm_b':self.atom_relative_nm_b,
                 'img_info':self.img_info}
-        
+        self.state = next_state
         return next_state, reward, done, info
 
     def calculate_potential(self,state):
         dist = np.linalg.norm(state[:2]*self.goal_nm - state[2:]*self.goal_nm)
-        return -dist/self.lattice_constant
+        return -dist/self.lattice_constant, dist
+
+    def compute_reward(self, state, next_state):
+        old_potential, _ = self.calculate_potential(state)
+        new_potential, dist = self.calculate_potential(next_state)
+        #print('old potential:', old_potential, 'new potential:', new_potential)
+        reward = self.default_reward_done*(dist<self.precision_lim) + self.default_reward*(dist>self.precision_lim) + new_potential - old_potential
+        return reward
     
     def scan_atom(self):
         img_forward, img_backward, offset_nm, len_nm = self.createc_controller.scan_image()
@@ -170,8 +175,9 @@ class RealExpEnv:
     def detect_current_jump(self, current):
         old_prediction = self.old_detect_current_jump(current)
         print('Old prediction:', old_prediction)
-        success, prediction = self.atom_move_detector.predict(current)
+
         if current is not None:
+            success, prediction = self.atom_move_detector.predict(current)
             if success:
                 print('cnn thinks there is atom movement')
                 return True
@@ -181,7 +187,7 @@ class RealExpEnv:
             elif (np.random.random()>0.5) and (prediction>0.2):
                 print('Random scan')
                 return True
-            elif np.random.random()>0.5:
+            elif np.random.random()>0.8:
                 print('Random scan')
                 return True
             else:
