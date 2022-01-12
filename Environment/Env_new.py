@@ -65,6 +65,7 @@ class RealExpEnv:
         self.destination_relative_nm, self.destination_absolute_nm, self.goal = self.get_destination(self.atom_start_relative_nm, self.atom_start_absolute_nm, goal_nm)
         
         state = np.concatenate((self.goal, (self.atom_absolute_nm - self.atom_start_absolute_nm)/self.goal_nm))
+        self.dist_destination = goal_nm
         self.old_potential = self.calculate_potential(state)
         info = {'start_absolute_nm':self.atom_start_absolute_nm, 'start_relative_nm':self.atom_start_relative_nm, 'goal_absolute_nm':self.destination_absolute_nm, 
                 'goal_relative_nm':self.destination_relative_nm, 'start_absolute_nm_f':self.atom_absolute_nm_f, 'start_absolute_nm_b':self.atom_absolute_nm_b, 
@@ -162,12 +163,16 @@ class RealExpEnv:
             return False'''
         if current is not None:
             if self.atom_move_detector.predict(current):
+                print('cnn thinks there is atom movement')
                 return True
             elif np.random.random()>0.9:
+                print('cnn thinks there is NOT atom movement, but scan anyway')
                 return True
             else:
+                print('cnn thinks there is NOT atom movement, so no scan')
                 return False
         else:
+            print('cnn thinks there is NOT atom movement, so no scan')
             return False
         
     def step_latman(self, x_start_nm, y_start_nm, x_end_nm, y_end_nm, mvoltage, pcurrent):

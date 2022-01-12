@@ -29,29 +29,32 @@ def ax_plot_graph(data, ax, y_label):
     ax.set_ylabel(y_label, fontsize=12)
     
 
-def show_reset(img_info, atom_start_position, destination_position, template_nm, template_wh):
+def show_reset(img_info, atom_start_position, destination_position, template_nm = None, template_wh = None):
     img = img_info['img_forward']
     offset_nm = img_info['offset_nm']
     len_nm = img_info['len_nm']
     _, ax = plt.subplots()
     extent = (offset_nm[0]-0.5*len_nm[0], offset_nm[0]+0.5*len_nm[0], offset_nm[1]+len_nm[0], offset_nm[1])
+
     ax.imshow(img, extent = extent)
-    rect = matplotlib.patches.Rectangle(template_nm,template_wh[0], template_wh[1], linewidth=1, edgecolor='r', facecolor='none')
-    ax.add_patch(rect)
+    if (template_nm is not None) and (template_wh is not None):
+        rect = matplotlib.patches.Rectangle(template_nm,template_wh[0], template_wh[1], linewidth=1, edgecolor='r', facecolor='none')
+        ax.add_patch(rect)
     ax.scatter(atom_start_position[0], atom_start_position[1], s = 20, linewidths=3, edgecolors='#33dbff', color = None, label='start')
     ax.scatter(destination_position[0], destination_position[1], s = 20, linewidths=3, edgecolors='#75ff33', color = None, label='gaol')
     plt.legend(frameon=False, labelcolor= 'white')
     plt.show()
 
-def show_done(img_info, atom_position, atom_start_position, destination_position, template_nm, template_wh, reward, new_destination_absolute_nm = None):
+def show_done(img_info, atom_position, atom_start_position, destination_position, reward, new_destination_absolute_nm = None, template_nm = None, template_wh = None):
     img = img_info['img_forward']
     offset_nm = img_info['offset_nm']
     len_nm = img_info['len_nm']
     _, ax = plt.subplots()
     extent = (offset_nm[0]-0.5*len_nm[0], offset_nm[0]+0.5*len_nm[0], offset_nm[1]+len_nm[0], offset_nm[1])
     ax.imshow(img, extent = extent)
-    rect = matplotlib.patches.Rectangle(template_nm,template_wh[0], template_wh[1], linewidth=1, edgecolor='r', facecolor='none')
-    ax.add_patch(rect)
+    if (template_nm is not None) and (template_wh is not None):
+        rect = matplotlib.patches.Rectangle(template_nm,template_wh[0], template_wh[1], linewidth=1, edgecolor='r', facecolor='none')
+        ax.add_patch(rect)
     ax.scatter(atom_start_position[0], atom_start_position[1], s = 20, linewidths=3, edgecolors='#33dbff', color = None, label='start')
     ax.scatter(destination_position[0], destination_position[1], s = 20, linewidths=3, edgecolors='#75ff33', color = None, label='gaol')
     ax.scatter(atom_position[0], atom_position[1], s = 20, linewidths=3, edgecolors='#ff5733', color = None, label='atom')
@@ -63,15 +66,17 @@ def show_done(img_info, atom_position, atom_start_position, destination_position
     plt.legend(frameon=False, labelcolor= 'white')
     plt.show()
 
-def show_step(img_info, start_nm, end_nm, atom_position, atom_start_position, destination_position, template_nm, template_wh, mvolt, pcurrent):
+def show_step(img_info, start_nm, end_nm, atom_position, atom_start_position, destination_position, mvolt, pcurrent,
+              template_nm = None, template_wh = None):
     img = img_info['img_forward']
     offset_nm = img_info['offset_nm']
     len_nm = img_info['len_nm']
     _, ax = plt.subplots()
     extent = (offset_nm[0]-0.5*len_nm[0], offset_nm[0]+0.5*len_nm[0], offset_nm[1]+len_nm[0], offset_nm[1])
     ax.imshow(img, extent = extent)
-    rect = matplotlib.patches.Rectangle(template_nm,template_wh[0], template_wh[1], linewidth=1, edgecolor='r', facecolor='none')
-    ax.add_patch(rect)
+    if (template_nm is not None) and (template_wh is not None):
+        rect = matplotlib.patches.Rectangle(template_nm,template_wh[0], template_wh[1], linewidth=1, edgecolor='r', facecolor='none')
+        ax.add_patch(rect)
     ax.scatter(atom_start_position[0], atom_start_position[1], s = 20, linewidths=3, edgecolors='#33dbff', color = None, label='start')
     ax.scatter(atom_position[0], atom_position[1], s = 20, linewidths=3, edgecolors='#ff5733', color = None, label='atom')
     ax.scatter(destination_position[0], destination_position[1], s = 20, linewidths=3, edgecolors='#75ff33', color = None, label='gaol')

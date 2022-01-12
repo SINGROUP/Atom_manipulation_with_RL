@@ -2,7 +2,6 @@ import numpy as np
 from matplotlib import pyplot as plt
 import glob
 import pandas as pd
-import seaborn as sns
 from torch.utils.data import Dataset, DataLoader
 import torch
 from torch import nn
@@ -10,24 +9,13 @@ import torch.nn.functional as F
 from torch.optim import Adam
 from sklearn.metrics import confusion_matrix, f1_score
 
-
 def cal_accuracy(y_true, y_pred):
     return (y_true == y_pred).sum().item()/ y_true.size(0)
 
 class conv_dataset(Dataset):
-    def __init__(self, currents, atom_move_by, move_threshold, length=2048, make_same_len = False):
-        num_atom_move = np.sum(atom_move_by>move_threshold)
-        num_atom_not_move = np.sum(atom_move_by<move_threshold)
-        
-        if (num_atom_move>1.1*num_atom_not_move) and make_same_len:
-            self.currents = np.concatenate((currents, currents[atom_move_by<move_threshold][:num_atom_move-num_atom_not_move]))
-            self.atom_move_by = np.concatenate((atom_move_by, atom_move_by[atom_move_by<move_threshold][:num_atom_move-num_atom_not_move]))
-        elif (num_atom_not_move>1.1*num_atom_move) and make_same_len:
-            self.currents = np.concatenate((currents, currents[atom_move_by>move_threshold][:num_atom_not_move-num_atom_move]))
-            self.atom_move_by = np.concatenate((atom_move_by, atom_move_by[atom_move_by>move_threshold][:num_atom_not_move-num_atom_move]))
-        else:
-            self.currents = currents
-            self.atom_move_by = atom_move_by 
+    def __init__(self, currents, atom_move_by, move_threshold, length=2048):
+        self.currents = currents
+        self.atom_move_by = atom_move_by
 
         self.length = length
         self.move_threshold = move_threshold
@@ -83,12 +71,12 @@ class AtomJumpDetector_conv:
         self.data_len = data_len
         self.batch_size=batch_size
         self.move_threshold = move_threshold
-        self.conv_net = CONV(data_len, 64, 4, 4, 2, 1)
+        self.conv = CONV(data_len, 64, 4, 4, 2, 1)
         
         if load_weight is not None:
             self.load_weight(load_weight)
 
-        self.optim = Adam(self.conv_net.parameters(),lr=1e-3)
+        self.optim = Adam(self.conv.parameters(),lr=1e-3)
         self.criterion = nn.BCELoss()
         self.currents, self.atom_move_by = [], []
         self.currents_val, self.atom_move_by_val = [], []
@@ -138,9 +126,8 @@ class AtomJumpDetector_conv:
         return prediction
     
     def load_weight(self, load_weight):
-        self.conv_net.load_state_dict(torch.load(load_weight))
+        self.conv.load_state_dict(torch.load(load_weight))
 
         
         
 
-        
