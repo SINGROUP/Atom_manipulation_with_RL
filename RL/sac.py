@@ -201,7 +201,7 @@ class sac_agent():
         q_loss = F.mse_loss(q1, next_q_value) + F.mse_loss(q2, next_q_value)
         self.critic_optim.zero_grad()
         q_loss.backward()
-        
+        critic_norm = self.get_grad_norm(self.critic)
         '''
         total_norm = 0
         for p in self.critic.parameters():
@@ -220,6 +220,8 @@ class sac_agent():
             policy_loss = (self.alpha*log_pi-min_q_pi).mean()
             self.policy_optim.zero_grad()
             policy_loss.backward()
+            policy_norm = self.get_grad_norm(self.policy)
+            print('Training','critic norm:', critic_norm, 'policy norm:', policy_norm)
             torch.nn.utils.clip_grad_norm_(self.policy.parameters(), 1, norm_type=2.0)
             self.policy_optim.step()
             
@@ -230,5 +232,15 @@ class sac_agent():
             self.alpha = self.log_alpha.detach().exp()
         
         soft_update(self.critic_target,self.critic,self.tau)
+
+    def get_grad_norm(self, net):
+        total_norm = 0
+        for p in net.parameters():
+            param_norm = p.grad.data.norm(2)
+            total_norm += param_norm.item() ** 2
+        total_norm = total_norm ** (1. / 2)
+
+        return total_norm
+
 
 

@@ -2,13 +2,16 @@ from Environment.createc_control import Createc_Controller
 import numpy as np
 from matplotlib import pyplot as plt
 #import get_atom_coordinate
-#import importlib
+import importlib
 #importlib.reload(get_atom_coordinate)
 from Environment.get_atom_coordinate import get_atom_coordinate_nm
 import scipy.spatial as spatial
 import findiff
 import pdb
 import scipy
+from Environment.atom_jump_detection import AtomJumpDetector_conv
+import Environment.atom_jump_detection
+importlib.reload(Environment.atom_jump_detection)
 from Environment.atom_jump_detection import AtomJumpDetector_conv
 
 class RealExpEnv:

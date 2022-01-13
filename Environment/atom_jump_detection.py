@@ -10,7 +10,8 @@ from torch.optim import Adam
 from sklearn.metrics import confusion_matrix, f1_score
 
 def cal_accuracy(y_true, y_pred):
-    return (y_true == y_pred).sum().item()/ y_true.shape[0]
+
+    return (y_true == y_pred).sum()/ (y_true.shape[0])
 
 class conv_dataset(Dataset):
     def __init__(self, currents, atom_move_by, move_threshold, length=2048):
@@ -90,7 +91,7 @@ class AtomJumpDetector_conv:
     
     def train(self):
         print('Training convnet')
-        dset = conv_dataset(self.currents, self.atom_move_by, self.move_threshold, make_same_len=True)
+        dset = conv_dataset(self.currents, self.atom_move_by, self.move_threshold)
 
         dataloader = DataLoader(dset, batch_size=self.batch_size,
                         shuffle=True, num_workers=0)
@@ -106,7 +107,6 @@ class AtomJumpDetector_conv:
 
     def eval(self):
         dset = conv_dataset(self.currents_val, self.atom_move_by_val, self.move_threshold)
-
         dataloader = DataLoader(dset, batch_size=len(dset),
                         shuffle=True, num_workers=0)
 
@@ -116,8 +116,9 @@ class AtomJumpDetector_conv:
             prediction = torch.squeeze(self.conv(current.float())).detach().numpy()>0.5
         accuracy = cal_accuracy(am, prediction)
         cm = confusion_matrix(am, prediction, normalize='pred')
-        print('Validation over {} ({}) data. Accuracy: {}, True positive: {}, True negative: {}'.format(len(dset), am.shape, accuracy, cm[1,1], cm[0,0]))
+        print('Validation over {}  data. Accuracy: {}, True positive: {}, True negative: {}'.format(len(dset), accuracy, cm[1,1], cm[0,0]))
         return accuracy, cm[1,1], cm[0,0]
+
     def predict(self, current):
         dset = conv_dataset([current], [True], self.move_threshold)
         dataloader = DataLoader(dset, batch_size=len(dset),
