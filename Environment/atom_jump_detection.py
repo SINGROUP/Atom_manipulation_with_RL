@@ -84,10 +84,11 @@ class AtomJumpDetector_conv:
         self.currents_val, self.atom_move_by_val = [], []
         
     def push(self, current, atom_move_by):
-        self.currents.append(current)
-        self.currents_val.append(current)
-        self.atom_move_by.append(atom_move_by)
-        self.atom_move_by_val.append(atom_move_by)
+        if current is not None:
+            self.currents.append(current)
+            self.currents_val.append(current)
+            self.atom_move_by.append(atom_move_by)
+            self.atom_move_by_val.append(atom_move_by)
     
     def train(self):
         print('Training convnet')

@@ -122,7 +122,6 @@ def get_all_atom_coordinate_nm(img, offset_nm, len_nm):
     atom_nm = pixel_to_nm(atom_pixel, img, offset_nm, len_nm)
     return atom_nm
 
-
 def subtract_plane(im):
     xPix, yPix = im.shape
     X1, X2 = np.mgrid[:xPix, :yPix]
@@ -136,12 +135,12 @@ def subtract_plane(im):
     im -= np.array(plane).astype(float)
     return im
 
-def get_region_centroids(im,diamond_size=3, sigmaclip=1.5, show=False):
+def get_region_centroids(im, diamond_size=3, sigmaclip=2, show=False):
     im = subtract_plane(im)
     #plt.imshow(im)
     #plt.show()
     diamond = morphology.diamond(diamond_size)
-
+    print(sigmaclip*np.std(im))
     maxima = morphology.h_maxima(im, sigmaclip*np.std(im))
     r = morphology.binary_dilation(maxima, selem=diamond)
     #plt.imshow(maxima)

@@ -11,11 +11,13 @@ def circle(x, y, r, p = 100):
         y_.append(y+r*np.sin(2*i*np.pi/p))
     return x_, y_
 
-def plot_graph(reward, precision, alpha, episode_len, avg__rewards, avg_alphas, avg_precisions, avg_episode_lengths):
+def plot_graph(reward, precision, alpha, episode_len, avg_rewards, avg_alphas, avg_precisions, avg_episode_lengths):
     clear_output(wait=True) 
     _, ((ax, ax1), (ax2, ax3)) = plt.subplots(2, 2, figsize=(12,8))
-    ax_plot_graph(reward, avg__rewards, ax, 'Episode reward')
+    ax_plot_graph(reward, avg_rewards, ax, 'Episode reward')
+    ax.set_ylim([-8, np.max(avg_rewards)+1])
     ax_plot_graph(precision, avg_precisions, ax1, 'Precision (nm)')
+    ax1.set_ylim([0, 2])
     ax_plot_graph(alpha, avg_alphas, ax2, 'alpha')
     ax_plot_graph(episode_len, avg_episode_lengths, ax3, 'Episode lengths')
     plt.show()

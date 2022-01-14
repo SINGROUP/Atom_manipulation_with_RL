@@ -13,6 +13,9 @@ from Environment.atom_jump_detection import AtomJumpDetector_conv
 import Environment.atom_jump_detection
 importlib.reload(Environment.atom_jump_detection)
 from Environment.atom_jump_detection import AtomJumpDetector_conv
+import Environment.get_atom_coordinate
+importlib.reload(Environment.get_atom_coordinate)
+from Environment.get_atom_coordinate import get_atom_coordinate_nm
 
 class RealExpEnv:
     
@@ -42,7 +45,7 @@ class RealExpEnv:
         self.atom_relative_nm = None
         self.template_max_y = template_max_y
 
-        self.lattice_constant = 0.28
+        self.lattice_constant = 0.288
         self.precision_lim = self.lattice_constant*np.sqrt(3)/3
         self.bottom = bottom
         self.atom_move_detector = AtomJumpDetector_conv(data_len=2048, load_weight = load_weight)
@@ -187,10 +190,10 @@ class RealExpEnv:
             elif old_prediction:
                 print('old prediction thinks there is atom movement')
                 return True
-            elif (np.random.random()>0.5) and (prediction>0.2):
+            elif (np.random.random()>(self.random_scan_rate-0.2)) and (prediction>0.2):
                 print('Random scan')
                 return True
-            elif np.random.random()>0.8:
+            elif np.random.random()>self.random_scan_rate:
                 print('Random scan')
                 return True
             else:
