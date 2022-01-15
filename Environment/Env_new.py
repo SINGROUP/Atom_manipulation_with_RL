@@ -52,10 +52,10 @@ class RealExpEnv:
         self.random_scan_rate = random_scan_rate
         self.accuracy, self.true_positive, self.true_negative = [], [], []
 
-    def reset(self):
+    def reset(self, update_conv_net = True):
         self.len = 0
 
-        if len(self.atom_move_detector.currents_val)>self.atom_move_detector.batch_size:
+        if (len(self.atom_move_detector.currents_val)>self.atom_move_detector.batch_size) and update_conv_net:
             accuracy, true_positive, true_negative = self.atom_move_detector.eval()
             self.accuracy.append(accuracy)
             self.true_positive.append(true_positive)
