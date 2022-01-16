@@ -130,6 +130,7 @@ class GaussianPolicy(nn.Module):
             self.action_bias = torch.FloatTensor(
                 (action_space.high + action_space.low) / 2.)
         self.apply(weights_init_)
+
     def forward(self,state):
         x = F.relu(self.fc1(state))
         x = F.relu(self.fc2(x))
@@ -137,6 +138,7 @@ class GaussianPolicy(nn.Module):
         log_std = self.log_std(x)
         log_std = torch.clamp(log_std, min=LOG_SIG_MIN, max=LOG_SIG_MAX)
         return mean, log_std
+
     def sample(self, state):
         mean, log_std = self.forward(state)
         std = log_std.exp()
@@ -171,6 +173,7 @@ class sac_agent():
         self.policy_optim = Adam(self.policy.parameters(),lr=lr)
         
         self.log_alpha = torch.tensor([np.log(alpha)], requires_grad=True, device=self.device, dtype=torch.float32)
+        self.alpha = self.log_alpha.detach().exp()
         self.alpha_optim = Adam([self.log_alpha], lr=lr)
         self.target_entropy = -torch.prod(torch.Tensor([num_actions]).to(self.device)).item()        
     
