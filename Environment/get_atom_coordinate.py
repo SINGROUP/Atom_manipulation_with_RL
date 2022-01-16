@@ -60,7 +60,7 @@ def blob_detection(img):
     params.minThreshold = 50
     params.blobColor = 255
     params.filterByArea = True
-    params.minArea = 1
+    params.minArea = 10
     params.maxArea = None
     params.minDistBetweenBlobs = 1
     ###create BlobDetector
@@ -135,12 +135,11 @@ def subtract_plane(im):
     im -= np.array(plane).astype(float)
     return im
 
-def get_region_centroids(im, diamond_size=3, sigmaclip=2, show=False):
+def get_region_centroids(im, diamond_size=3, sigmaclip=5, show=False):
     im = subtract_plane(im)
     #plt.imshow(im)
     #plt.show()
     diamond = morphology.diamond(diamond_size)
-    print(sigmaclip*np.std(im))
     maxima = morphology.h_maxima(im, sigmaclip*np.std(im))
     r = morphology.binary_dilation(maxima, selem=diamond)
     #plt.imshow(maxima)
