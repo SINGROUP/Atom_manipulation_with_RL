@@ -1,10 +1,11 @@
-from Environment.Env import RealExpEnv
+from Environment.Env_new import RealExpEnv
 from Environment.get_atom_coordinate import get_atom_coordinate_nm, get_all_atom_coordinate_nm, get_atom_coordinate_nm_with_anchor
 
 import numpy as np
 import scipy.spatial as spatial
 from scipy.optimize import linear_sum_assignment
-
+import copy
+from Environment.rrt import RRT
 def circle(x, y, r, p = 100):
     x_, y_ = [], []
     for i in range(p):
@@ -47,10 +48,9 @@ def get_anchor(atom, anchors):
         anchor, _, _, _, _, _ = assignment(anchors, atom.reshape((-1,2)))
     return anchor
 
-
 class Structure_Builder(RealExpEnv):
     def __init__(self, step_nm, max_mvolt, max_pcurrent_to_mvolt_ratio, goal_nm, current_jump, im_size_nm, offset_nm,
-                 pixel, scan_mV, max_len):
+                 pixel, scan_mV, max_len, safe_radius_nm = 1):
         super(Structure_Builder, self).__init__(step_nm, max_mvolt, max_pcurrent_to_mvolt_ratio, goal_nm, None, current_jump, im_size_nm, offset_nm,
                  None, pixel, None, None, scan_mV, max_len)
         self.atom_absolute_nm_f = None
@@ -58,9 +58,9 @@ class Structure_Builder(RealExpEnv):
         self.large_DX_DDeltaX = float(self.createc_controller.stm.getparam('DX/DDeltaX'))
         self.large_offset_nm = offset_nm
         self.large_len_nm = im_size_nm
+        self.safe_radius_nm = safe_radius_nm
 
     def reset_large(self, design_nm):
-        
         self.num_atoms = design_nm.shape[0]
         self.all_atom_absolute_nm = self.scan_all_atoms(self.large_offset_nm, self.large_len_nm) 
         self.atoms, self.designs, c_min, anchor = align_design(self.all_atom_absolute_nm, design_nm)
@@ -68,10 +68,11 @@ class Structure_Builder(RealExpEnv):
         self.large_img_info |= {'design': self.design_nm}
         self.init_anchor = anchor
         self.anchors = [self.init_anchor]
-        self.atom_chosen, self.design_chosen = self.match_atoms_designs()
+        self.atom_chosen, self.design_chosen, self.obstacle_list = self.match_atoms_designs()
         self.anchor_chosen = self.init_anchor
+        self.next_destinatio_nm, self.paths = self.find_path()
         offset_nm, len_nm = self.get_offset_len()
-        return self.atom_chosen, self.design_chosen, self.anchor_chosen, offset_nm, len_nm
+        return self.atom_chosen, self.design_chosen, self.next_destinatio_nm, self.paths, self.anchor_chosen, offset_nm, len_nm
         
     def step_large(self, succeed, new_atom_position):
         self.all_atom_absolute_nm = self.scan_all_atoms(self.large_offset_nm, self.large_len_nm)
@@ -81,14 +82,16 @@ class Structure_Builder(RealExpEnv):
             self.update_after_success(new_atom_position)
         self.atom_chosen, self.design_chosen = self.match_atoms_designs()
         self.anchor_chosen = get_anchor(self.atom_chosen, np.vstack(self.anchors))
+        self.next_destinatio_nm, self.paths = self.find_path()
         offset_nm, len_nm = self.get_offset_len()
-        return self.atom_chosen, self.design_chosen, self.anchor_chosen, offset_nm, len_nm
+        return self.atom_chosen, self.design_chosen, self.next_destinatio_nm, self.pathss, self.anchor_chosen, offset_nm, len_nm
 
     def get_offset_len(self):
-        len_nm = 2*max(np.max(np.abs(self.anchor_chosen - self.atom_chosen)), 2)+2
+        len_nm_0 = 2*max(np.max(np.abs(self.anchor_chosen - self.atom_chosen)), 2)+2
+        len_nm_1 = 2*max(np.max(np.abs(self.next_destinatio_nm - self.atom_chosen)), 2)+2
+        len_nm = max(len_nm_0, len_nm_1)
         offset_nm = self.atom_chosen +np.array([0,-0.5*len_nm])
         return offset_nm, len_nm
-
 
     def update_after_success(self, new_atom_position):
         i = np.argmin(spatial.cdist(self.all_atom_absolute_nm, new_atom_position.reshape((-1,2))))
@@ -102,7 +105,29 @@ class Structure_Builder(RealExpEnv):
         j = np.argmax(costs)
         atom_chosen = atoms[j,:]
         design_chosen = designs[j,:]
-        return atom_chosen, design_chosen   
+        obstacle_list = []
+        for i in range(atoms.shape[0]):
+            if i!=j:
+                obstacle_list.append((atoms[i,0],atoms[i,1],self.safe_radius_nm))
+        
+        return atom_chosen, design_chosen, obstacle_list
+     
+    def find_path(self, max_step = 2):
+        self.obstacle_list.append((self.anchor_chosen[0], self.anchor_chosen[1], self.safe_radius_nm))
+        print('start:',self.atom_chosen, 'goal',self.design_chosen)
+        path = rrt = RRT(
+            start=self.atom_chosen, goal=self.design_chosen, rand_area=[-2, 15],
+            obstacle_list=self.obstacle_list, expand_dis= max_step, path_resolution=1)
+        path_len = np.inf
+        min_path = None
+        for _ in range(10):
+            path = rrt.planning(animation=False)
+            if len(path)<path_len:
+                min_path = path
+                path_len = len(path)
+        if min_path is None:
+            print('Cannot find path')
+        return np.array(min_path[-2]), min_path   
 
     def reset(self, destination_nm, anchor_nm, offset_nm, len_nm, large_len_nm):
         self.len = 0

@@ -86,22 +86,20 @@ def show_step(img_info, start_nm, end_nm, atom_position, atom_start_position, de
     plt.show()
     
     
-def plot_large_frame(img, offset_nm, len_nm, design, start, i):
-    fig, ax = plt.subplots()
+def plot_large_frame(img_info, atom_chosen, design_chosen, anchor_chosen, next_destination, path):
+    _, ax = plt.subplots()
+    img = img_info['img_forward']
+    offset_nm = img_info['offset_nm']
+    len_nm = img_info['len_nm']
     extent = (offset_nm[0]-0.5*len_nm[0], offset_nm[0]+0.5*len_nm[0], offset_nm[1]+len_nm[0], offset_nm[1])
     ax.imshow(img, extent = extent)
-    for g in design:
-            x, y = circle(g[0], g[1], r)
-            ax.plot(x,y, color='#A45D5D')
-    for g in start:
-        x, y = circle(g[0], g[1], r)
-        ax.plot(x,y, color='#4A403A')
-        
-    for j in range(start.shape[0]):
-        plt.arrow(start[j,0],start[j,1], (design-start)[j,0], (design-start)[j,1], width=0.1,length_includes_head=True, color='#FFC069')
-        fs = 14
-        if j==i:
-            fs = 20
-        ax.annotate(j, (start[j,0], start[j,1]), fontsize=fs)
+    ax.scatter(atom_chosen[0], atom_chosen[1], color='#A45D5D' ,label='atom')
+    ax.scatter(design_chosen[0],design_chosen[1], color='#4A403A', label='design')
+    ax.scatter(anchor_chosen[0], anchor_chosen[1], color = '#BB893E', label='anchor')
+
+    path = np.array(path)
+    ax.plot(path[:,0], path[:,1])
+    ax.arrow(atom_chosen[0],atom_chosen[1], (next_destination - atom_chosen)[0], (next_destination - atom_chosen)[1], width=0.1,length_includes_head=True, color='#FFC069')
+    ax.legend(frameon = False)
     plt.show()
 
