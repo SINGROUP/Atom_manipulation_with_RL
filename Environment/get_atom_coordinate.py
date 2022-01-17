@@ -43,6 +43,7 @@ def template_matching(img, template, template_max_y, bottom = True):
     plt.show()'''
     return np.array(bottom_left), np.array(top_right)
 
+import cv2
 def blob_detection(img):
     ###set BlobDetector params https://learnopencv.com/blob-detection-using-opencv-python-c/
     img = np.array(img)
@@ -57,12 +58,12 @@ def blob_detection(img):
     params.filterByConvexity = False
     #params.minInertiaRatio = 0.7
     params.maxThreshold = 255
-    params.minThreshold = 50
+    params.minThreshold = 40
     params.blobColor = 255
     params.filterByArea = True
-    params.minArea = 10
-    params.maxArea = None
-    params.minDistBetweenBlobs = 1
+    params.minArea = 1
+    params.maxArea = 1000
+    params.minDistBetweenBlobs = 10
     ###create BlobDetector
     detector = cv2.SimpleBlobDetector_create(params)
     ###Detect
@@ -114,7 +115,9 @@ def get_atom_coordinate_nm_with_anchor(img, offset_nm, len_nm, anchor_nm):
     atoms_nm = pixel_to_nm(atom_pixel, img, offset_nm, len_nm)
     dist = cdist(atoms_nm.reshape((-1,2)), anchor_nm.reshape((-1,2)))
     anchor_nm_ = atoms_nm[np.argmin(dist),:]
-    atom_nm = atoms_nm[np.argmax(dist),:]
+    center = offset_nm + np.array([0, 0.5*len_nm[0]])
+    dist = cdist(atoms_nm.reshape((-1,2)), center.reshape((-1,2)))
+    atom_nm = atoms_nm[np.argmin(dist),:]
     return atom_nm, anchor_nm_
     
 def get_all_atom_coordinate_nm(img, offset_nm, len_nm):
@@ -135,7 +138,7 @@ def subtract_plane(im):
     im -= np.array(plane).astype(float)
     return im
 
-def get_region_centroids(im, diamond_size=3, sigmaclip=5, show=False):
+def get_region_centroids(im, diamond_size=3, sigmaclip=3, show=False):
     im = subtract_plane(im)
     #plt.imshow(im)
     #plt.show()

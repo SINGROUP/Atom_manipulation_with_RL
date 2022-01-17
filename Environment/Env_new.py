@@ -240,7 +240,12 @@ class RealExpEnv:
 
     def pull_atom_back(self):
         print('pulling atom back to center')
-        self.createc_controller.lat_manipulation(self.atom_absolute_nm[0], self.atom_absolute_nm[1], np.mean(self.manip_limit_nm[:2])+2*np.random.random()-1, np.mean(self.manip_limit_nm[2:])+2*np.random.random()-1, 2500, 65000, self.offset_nm, self.len_nm)
+        mV = 10 #2500
+        current = 57000 #65000
+        self.createc_controller.lat_manipulation(self.atom_absolute_nm[0], self.atom_absolute_nm[1],
+                                                 np.mean(self.manip_limit_nm[:2])+2*np.random.random()-1,
+                                                 np.mean(self.manip_limit_nm[2:])+2*np.random.random()-1,
+                                                 mV, current, self.offset_nm, self.len_nm)
 
         
 
