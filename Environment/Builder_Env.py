@@ -59,13 +59,23 @@ def get_anchor(atom, anchors):
         anchor, _, _, _, _, _ = assignment(anchors, atom.reshape((-1,2)))
     return anchor.flatten()
 
+def align_deisgn_stitching(all_atom_absolute_nm, design_nm, align_design_params):
+    anchor_atom_nm = align_design_params['atom_nm']
+    anchor_design_nm = align_design_params['design_nm']
+    
+    assert anchor_design_nm.tolist() in design_nm.tolist()
+    dist = cdist(all_atom_absolute_nm, anchor_atom_nm.reshape((-1,2)))
+    atoms = np.delete(all_atom_absolute_nm, np.argmin(dist), axis=0)
+    dist = cdist(design_nm, anchor_design_nm.reshape((-1,2)))
+    designs = np.delete(design_nm, np.argmin(dist), axis=0)
+    designs += (anchor_atom_nm - anchor_design_nm)
+    return atoms, designs, anchor_atom_nm
+
 class Structure_Builder(RealExpEnv):
     def __init__(self, step_nm, max_mvolt, max_pcurrent_to_mvolt_ratio, goal_nm, current_jump, im_size_nm, offset_nm,
                  pixel, scan_mV, max_len, safe_radius_nm = 1):
         super(Structure_Builder, self).__init__(step_nm, max_mvolt, max_pcurrent_to_mvolt_ratio, goal_nm, None, current_jump,
                                                 im_size_nm, offset_nm, None, pixel, None, scan_mV, max_len, None, random_scan_rate = 0)
-
-
         self.atom_absolute_nm_f = None
         self.atom_absolute_nm_b = None
         self.large_DX_DDeltaX = float(self.createc_controller.stm.getparam('DX/DDeltaX'))
@@ -73,11 +83,15 @@ class Structure_Builder(RealExpEnv):
         self.large_len_nm = im_size_nm
         self.safe_radius_nm = safe_radius_nm
         self.anchor_nm = None
-
-    def reset_large(self, design_nm):
+        
+    def reset_large(self, design_nm, align_design_mode = 'auto', align_design_params = {'atom_nm':None, 'design_nm':{}}):
+        self.align_design_mode = align_design_mode
         self.num_atoms = design_nm.shape[0]
         self.all_atom_absolute_nm = self.scan_all_atoms(self.large_offset_nm, self.large_len_nm) 
-        self.atoms, self.designs, c_min, anchor = align_design(self.all_atom_absolute_nm, design_nm)
+        if self.align_design_mode == 'auto':
+            self.atoms, self.designs, c_min, anchor = align_design(self.all_atom_absolute_nm, design_nm)
+        elif self.align_design_mode =='manual':
+            self.atoms, self.designs, anchor = align_deisgn_stitching(self.all_atom_absolute_nm, design_nm, align_design_params)
         self.design_nm = np.concatenate((self.designs, anchor.reshape((-1,2))))
         self.large_img_info |= {'design': self.design_nm}
         self.init_anchor = anchor
@@ -106,7 +120,7 @@ class Structure_Builder(RealExpEnv):
             self.next_destinatio_nm, self.paths = self.find_path()
             if (self.next_destinatio_nm is not None) and (self.paths is not None):
                 break
-
+            
         offset_nm, len_nm = self.get_offset_len()
         return self.atom_chosen, self.design_chosen, self.next_destinatio_nm, self.paths, self.anchor_chosen, offset_nm, len_nm
 

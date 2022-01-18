@@ -42,24 +42,32 @@ class HerReplayMemory(ReplayMemory):
             #print('old state:', state, 'old next state:', next_state, 'old reward:', reward)
 
             final_idx = self.sample_goals(idx)
-            _, _, _, final_next_state, _ = self.buffer[final_idx]
-            new_next_state = copy.copy(next_state)
-            new_state = copy.copy(state)
-            new_state[:2] = final_next_state[2:]
-            new_next_state[:2] = final_next_state[2:]
-            new_reward = self.env.compute_reward(new_state, new_next_state)
-            batch.append((new_state, action, new_reward, new_next_state, mask))
+            for fi in final_idx:
+                _, _, _, final_next_state, _ = self.buffer[fi]
+                new_next_state = copy.copy(next_state)
+                new_state = copy.copy(state)
+                new_state[:2] = final_next_state[2:]
+                new_next_state[:2] = final_next_state[2:]
+                new_reward = self.env.compute_reward(new_state, new_next_state)
+                batch.append((new_state, action, new_reward, new_next_state, mask))
         state, action, reward, next_state, mask = map(np.stack,zip(*batch))
         return state, action, reward, next_state, mask
 
-    def sample_goals(self, idx):
+    def sample_goals(self, idx, strategy = 'final'):
         #get done state idx
-        i = copy.copy(idx)   
+        i = copy.copy(idx) 
+         
         while True:
             _,_,_,_,m = self.buffer[i]
             if not m:
-                return i
-            i-=1
+                break
+            else:
+                i-=1
+        if strategy == 'final' or i == idx:
+            return [i]
+        elif strategy == 'future':
+            iss = np.random.choice(np.arange(i, idx+1), min(idx-i+1, 3))
+            return iss
 
     def calculate_value(self, state):
         goal_nm = state[:2]*self.env.goal_nm
