@@ -187,7 +187,7 @@ class RealExpEnv:
             if success:
                 print('cnn thinks there is atom movement')
                 return True
-            elif old_prediction:
+            elif old_prediction and (np.random.random()>(self.random_scan_rate-0.4)):
                 print('old prediction thinks there is atom movement')
                 return True
             elif (np.random.random()>(self.random_scan_rate-0.2)) and (prediction>0.2):
@@ -240,8 +240,8 @@ class RealExpEnv:
 
     def pull_atom_back(self):
         print('pulling atom back to center')
-        mV = 10 #2500
-        current = 57000 #65000
+        mV = 2500 #10
+        current = 60000 #57000
         self.createc_controller.lat_manipulation(self.atom_absolute_nm[0], self.atom_absolute_nm[1],
                                                  np.mean(self.manip_limit_nm[:2])+2*np.random.random()-1,
                                                  np.mean(self.manip_limit_nm[2:])+2*np.random.random()-1,

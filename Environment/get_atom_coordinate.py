@@ -113,8 +113,11 @@ def get_atom_coordinate_nm(img, offset_nm, len_nm, template, template_max_y, bot
 def get_atom_coordinate_nm_with_anchor(img, offset_nm, len_nm, anchor_nm):
     atom_pixel = atom_detection(img, np.array([0,0]), np.array([0,0]))
     atoms_nm = pixel_to_nm(atom_pixel, img, offset_nm, len_nm)
-    dist = cdist(atoms_nm.reshape((-1,2)), anchor_nm.reshape((-1,2)))
-    anchor_nm_ = atoms_nm[np.argmin(dist),:]
+    if anchor_nm is not None:
+        dist = cdist(atoms_nm.reshape((-1,2)), anchor_nm.reshape((-1,2)))
+        anchor_nm_ = atoms_nm[np.argmin(dist),:]
+    else:
+        anchor_nm_ = None
     center = offset_nm + np.array([0, 0.5*len_nm[0]])
     dist = cdist(atoms_nm.reshape((-1,2)), center.reshape((-1,2)))
     atom_nm = atoms_nm[np.argmin(dist),:]

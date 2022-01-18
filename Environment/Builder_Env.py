@@ -72,6 +72,7 @@ class Structure_Builder(RealExpEnv):
         self.large_offset_nm = offset_nm
         self.large_len_nm = im_size_nm
         self.safe_radius_nm = safe_radius_nm
+        self.anchor_nm = None
 
     def reset_large(self, design_nm):
         self.num_atoms = design_nm.shape[0]
@@ -111,8 +112,13 @@ class Structure_Builder(RealExpEnv):
 
     def get_offset_len(self):
         len_nm_0 = 2*max(np.max(np.abs(self.anchor_chosen - self.atom_chosen)), 2)+1
-        len_nm_1 = 2*max(np.max(np.abs(self.next_destinatio_nm - self.atom_chosen)), 2)+1
+        len_nm_1 = 2*max(np.max(np.abs(self.next_destinatio_nm - self.atom_chosen)), 2)+2
         len_nm = max(len_nm_0, len_nm_1)
+        if len_nm > self.large_len_nm:
+            len_nm = len_nm_1
+            self.use_anchor = False
+        else:
+            self.use_anchor = True
         offset_nm = self.atom_chosen +np.array([0,-0.5*len_nm])
         return offset_nm, len_nm
 
@@ -139,17 +145,18 @@ class Structure_Builder(RealExpEnv):
         for i in range(atoms.shape[0]):
             if i!=j:
                 obstacle_list.append((atoms[i,0],atoms[i,1],self.safe_radius_nm))
+        for a in self.anchors:
+            obstacle_list.append((a[0], a[1], self.safe_radius_nm))
         return atom_chosen, design_chosen, obstacle_list
      
     def find_path(self, max_step = 2):
-        self.obstacle_list.append((self.anchor_chosen[0], self.anchor_chosen[1], self.safe_radius_nm))
         print('start:',self.atom_chosen, 'goal',self.design_chosen)
         rrt = RRT(
             start=self.atom_chosen, goal=self.design_chosen, rand_area=[-2, 15],
             obstacle_list=self.obstacle_list, expand_dis= max_step, path_resolution=1)
         path_len = np.inf
         min_path = None
-        for _ in range(10):
+        for _ in range(20):
             path = rrt.planning(animation=False)
             if path is not None:
                 if len(path)<path_len:
@@ -161,16 +168,19 @@ class Structure_Builder(RealExpEnv):
         if min_path is None:
             print('Cannot find path')
             return None, None
-
         return np.array(min_path[-2]), min_path   
 
     def reset(self, destination_nm, anchor_nm, offset_nm, len_nm, large_len_nm):
         self.len = 0
-        self.atom_absolute_nm, self.anchor_nm = self.scan_atom(anchor_nm, offset_nm, len_nm, large_len_nm)
+        self.scan_atom(anchor_nm, offset_nm, len_nm, large_len_nm)
 
         self.atom_start_absolute_nm = self.atom_absolute_nm
         print('anchor from small scan:', self.anchor_nm, 'anchor from large scan:', anchor_nm)
-        destination_nm_with_correction = destination_nm + self.anchor_nm - anchor_nm
+        if (self.anchor_nm is not None) and self.use_anchor:
+            destination_nm_with_correction = destination_nm + self.anchor_nm - anchor_nm
+        else:
+            destination_nm_with_correction = destination_nm
+
         self.destination_absolute_nm, self.goal = self.get_destination(self.atom_start_absolute_nm, destination_nm_with_correction)
         info = {'start_absolute_nm':self.atom_start_absolute_nm, 'goal_absolute_nm':self.destination_absolute_nm,
                 'start_absolute_nm_f':self.atom_absolute_nm_f, 'start_absolute_nm_b':self.atom_absolute_nm_b, 'img_info':self.img_info}
@@ -181,7 +191,6 @@ class Structure_Builder(RealExpEnv):
         x_start_nm , y_start_nm, x_end_nm, y_end_nm, mvolt, pcurrent = self.action_to_latman_input(action)
         current_series, d = self.step_latman(x_start_nm , y_start_nm, x_end_nm, y_end_nm, mvolt, pcurrent)
         info = {'current_series':current_series, 'd': d, 'start_nm':  np.array([x_start_nm , y_start_nm]), 'end_nm':np.array([x_end_nm , y_end_nm])}
-
         done = False
         self.len+=1
         done = self.len == self.max_len
@@ -214,12 +223,19 @@ class Structure_Builder(RealExpEnv):
         self.createc_controller.im_size_nm = self.len_nm
         
         img_forward, img_backward, offset_nm, len_nm = self.createc_controller.scan_image()
-        self.img_info = {'img_forward':img_forward,'img_backward':img_backward, 'offset_nm':offset_nm, 'len_nm':len_nm}
-        self.atom_absolute_nm_f, self.anchor_nm_f = get_atom_coordinate_nm_with_anchor(img_forward, offset_nm, len_nm, self.anchor_nm)
-        self.atom_absolute_nm_b, self.anchor_nm_b = get_atom_coordinate_nm_with_anchor(img_backward, offset_nm, len_nm, self.anchor_nm)
+        if self.use_anchor:
+            self.atom_absolute_nm_f, self.anchor_nm_f = get_atom_coordinate_nm_with_anchor(img_forward, offset_nm, len_nm, self.anchor_nm)
+            self.atom_absolute_nm_b, self.anchor_nm_b = get_atom_coordinate_nm_with_anchor(img_backward, offset_nm, len_nm, self.anchor_nm)
+            self.anchor_nm = 0.5*(self.anchor_nm_f+self.anchor_nm_b)
+        else:
+            self.atom_absolute_nm_f, _ = get_atom_coordinate_nm_with_anchor(img_forward, offset_nm, len_nm, None)
+            self.atom_absolute_nm_b, _ = get_atom_coordinate_nm_with_anchor(img_backward, offset_nm, len_nm, None)
+
         self.atom_absolute_nm = 0.5*(self.atom_absolute_nm_f+self.atom_absolute_nm_b)
-        self.anchor_nm = 0.5*(self.anchor_nm_f+self.anchor_nm_b)
-        return self.atom_absolute_nm, self.anchor_nm
+        self.img_info = {'img_forward':img_forward,'img_backward':img_backward, 'offset_nm':offset_nm, 'len_nm':len_nm,
+                         'anchor': self.anchor_nm, 'atom_absolute_nm_f': self.atom_absolute_nm_f,
+                         'atom_absolute_nm_b': self.atom_absolute_nm_b, 'atom_absolute_nm': self.atom_absolute_nm}
+
 
     def scan_all_atoms(self, offset_nm, len_nm):
         self.createc_controller.stm.setparam('DX/DDeltaX', self.large_DX_DDeltaX)
