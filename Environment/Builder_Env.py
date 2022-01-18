@@ -14,6 +14,7 @@ from Environment.Env_new import RealExpEnv
 import Environment.get_atom_coordinate
 importlib.reload(Environment.get_atom_coordinate)
 from Environment.get_atom_coordinate import get_atom_coordinate_nm, get_all_atom_coordinate_nm, get_atom_coordinate_nm_with_anchor
+from Environment.data_visualization import plot_atoms_and_design
 
 
 def circle(x, y, r, p = 100):
@@ -92,9 +93,12 @@ class Structure_Builder(RealExpEnv):
             self.atoms, self.designs, c_min, anchor = align_design(self.all_atom_absolute_nm, design_nm)
         elif self.align_design_mode =='manual':
             self.atoms, self.designs, anchor = align_deisgn_stitching(self.all_atom_absolute_nm, design_nm, align_design_params)
+        self.init_anchor = anchor
+        print('Use anchor:', self.use_anchor)
+        plot_atoms_and_design(self.large_img_info, self.atoms,self.designs, self.init_anchor)
         self.design_nm = np.concatenate((self.designs, anchor.reshape((-1,2))))
         self.large_img_info |= {'design': self.design_nm}
-        self.init_anchor = anchor
+        
         self.anchors = [self.init_anchor]
 
         for i in range(self.atoms.shape[0]):
@@ -120,7 +124,7 @@ class Structure_Builder(RealExpEnv):
             self.next_destinatio_nm, self.paths = self.find_path()
             if (self.next_destinatio_nm is not None) and (self.paths is not None):
                 break
-            
+
         offset_nm, len_nm = self.get_offset_len()
         return self.atom_chosen, self.design_chosen, self.next_destinatio_nm, self.paths, self.anchor_chosen, offset_nm, len_nm
 

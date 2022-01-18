@@ -23,7 +23,6 @@ def plot_graph(reward, precision, alpha, episode_len, avg_rewards, avg_alphas, a
     plt.show()
 
 def ax_plot_graph(data, avg_data, ax, y_label):
-
     df = pd.DataFrame({'x': range(len(data)), 'data': data, 'average': avg_data})
     ax.plot(df['x'], df['data'], marker='', color='silver', linewidth=0.8, alpha=0.9)
     ax.plot(df['x'], df['average'], marker='', color='DodgerBlue', linewidth=1, alpha=0.9)
@@ -93,13 +92,31 @@ def plot_large_frame(img_info, atom_chosen, design_chosen, anchor_chosen, next_d
     len_nm = img_info['len_nm']
     extent = (offset_nm[0]-0.5*len_nm[0], offset_nm[0]+0.5*len_nm[0], offset_nm[1]+len_nm[0], offset_nm[1])
     ax.imshow(img, extent = extent)
-    ax.scatter(atom_chosen[0], atom_chosen[1], color='#A45D5D' ,label='atom')
-    ax.scatter(design_chosen[0],design_chosen[1], color='#4A403A', label='design')
-    ax.scatter(anchor_chosen[0], anchor_chosen[1], color = '#BB893E', label='anchor')
+    ax.scatter(atom_chosen[0], atom_chosen[1], color='#7027A0' ,label='atom')
+    ax.scatter(design_chosen[0],design_chosen[1], color='#1DB9C3', label='design')
+    ax.scatter(anchor_chosen[0], anchor_chosen[1], color = '#F56FAD', label='anchor')
 
     path = np.array(path)
     ax.plot(path[:,0], path[:,1])
     ax.arrow(atom_chosen[0],atom_chosen[1], (next_destination - atom_chosen)[0], (next_destination - atom_chosen)[1], width=0.1,length_includes_head=True, color='#FFC069')
-    ax.legend(frameon = False)
+    ax.legend(frameon = False, labelcolor = '#FAEBE0')
     plt.show()
+
+def plot_atoms_and_design(img_info, all_atoms, design, anchor):
+    _, ax = plt.subplots()
+    img = img_info['img_forward']
+    offset_nm = img_info['offset_nm']
+    len_nm = img_info['len_nm']
+    extent = (offset_nm[0]-0.5*len_nm[0], offset_nm[0]+0.5*len_nm[0], offset_nm[1]+len_nm[0], offset_nm[1])
+    ax.imshow(img, extent = extent)
+    ax.scatter(all_atoms[0,:], all_atoms[1,:], color='#7027A0' ,label='atom')
+    ax.scatter(design[0,:],design[1,:], color='#1DB9C3', label='design')
+    ax.scatter(anchor[0], anchor[1], color = '#F56FAD', label='anchor')
+    ax.legend(frameon = False, labelcolor = '#FAEBE0')
+    plt.show()
+
+
+
+
+
 
