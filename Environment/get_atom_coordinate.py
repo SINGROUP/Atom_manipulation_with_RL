@@ -110,7 +110,7 @@ def get_atom_coordinate_nm(img, offset_nm, len_nm, template, template_max_y, bot
         atom_nm = atom_nm[np.argmin(dist),:]
     return atom_nm, (atom_nm - bottom_left_nm), bottom_left_nm, wh
 
-def get_atom_coordinate_nm_with_anchor(img, offset_nm, len_nm, anchor_nm):
+def get_atom_coordinate_nm_with_anchor(img, offset_nm, len_nm, anchor_nm, obstacle_list = None):
     atom_pixel = atom_detection(img, np.array([0,0]), np.array([0,0]))
     atoms_nm = pixel_to_nm(atom_pixel, img, offset_nm, len_nm)
     if anchor_nm is not None:
@@ -118,9 +118,13 @@ def get_atom_coordinate_nm_with_anchor(img, offset_nm, len_nm, anchor_nm):
         anchor_nm_ = atoms_nm[np.argmin(dist),:]
     else:
         anchor_nm_ = None
-    center = offset_nm + np.array([0, 0.5*len_nm[0]])
-    dist = cdist(atoms_nm.reshape((-1,2)), center.reshape((-1,2)))
-    atom_nm = atoms_nm[np.argmin(dist),:]
+    if obstacle_list is not None:
+        i = np.argmax(cdist(atoms_nm, obstacle_list).min(axis = 1))
+        atom_nm = atoms_nm[i,:]
+    else:
+        center = offset_nm + np.array([0, 0.5*len_nm[0]])
+        dist = cdist(atoms_nm.reshape((-1,2)), center.reshape((-1,2)))
+        atom_nm = atoms_nm[np.argmin(dist),:]
     return atom_nm, anchor_nm_
     
 def get_all_atom_coordinate_nm(img, offset_nm, len_nm):

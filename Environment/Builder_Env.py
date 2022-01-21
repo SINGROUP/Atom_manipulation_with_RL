@@ -108,18 +108,8 @@ class Structure_Builder(RealExpEnv):
         
         self.anchors = [self.init_anchor]
 
-        for i in range(self.atoms.shape[0]):
-            self.atom_chosen, self.design_chosen, self.obstacle_list = self.match_atoms_designs(i)
-            self.anchor_chosen = self.init_anchor
-            self.next_destinatio_nm, self.paths = self.find_path()
-            if (self.next_destinatio_nm is not None) and (self.paths is not None):
-                break
-        offset_nm, len_nm = self.get_offset_len()
-        print('Use anchor:', self.use_anchor)
-        if np.linalg.norm(self.atom_chosen - self.design_chosen) > 1.5*self.goal_nm:
-            self.stop_lim = np.sqrt(3)*self.precision_lim
-        else:
-            self.stop_lim = self.precision_lim
+        offset_nm, len_nm = self.get_the_returns()
+        
         return self.atom_chosen, self.design_chosen, self.next_destinatio_nm, self.paths, self.anchor_chosen, offset_nm, len_nm
         
     def step_large(self, succeed, new_atom_position):
@@ -130,19 +120,22 @@ class Structure_Builder(RealExpEnv):
         done = False
         if succeed and (np.linalg.norm(self.next_destinatio_nm - self.design_chosen)<0.01):
             done = self.update_after_success(new_atom_position)
+        offset_nm, len_nm = self.get_the_returns()
+        return self.atom_chosen, self.design_chosen, self.next_destinatio_nm, self.paths, self.anchor_chosen, offset_nm, len_nm, done
+
+    def get_the_returns(self):
         for i in range(self.atoms.shape[0]):
             self.atom_chosen, self.design_chosen, self.obstacle_list = self.match_atoms_designs(i)
-            self.anchor_chosen = get_anchor(self.atom_chosen, np.vstack(self.anchors))
+            if len(self.anchors) == 1:
+                self.anchor_chosen = self.init_anchor
+            else:
+                self.anchor_chosen = get_anchor(self.atom_chosen, np.vstack(self.anchors))
             self.next_destinatio_nm, self.paths = self.find_path()
             if (self.next_destinatio_nm is not None) and (self.paths is not None):
                 break
-
         offset_nm, len_nm = self.get_offset_len()
-        if np.linalg.norm(self.atom_chosen - self.design_chosen) > 1.5*self.goal_nm:
-            self.stop_lim = np.sqrt(3)*self.precision_lim
-        else:
-            self.stop_lim = self.precision_lim
-        return self.atom_chosen, self.design_chosen, self.next_destinatio_nm, self.paths, self.anchor_chosen, offset_nm, len_nm, done
+        print('Use anchor:', self.use_anchor)            
+        return offset_nm, len_nm
 
     def get_offset_len(self):
         len_nm_0 = 2*max(np.max(np.abs(self.anchor_chosen - self.atom_chosen)), 2)+1
@@ -173,7 +166,6 @@ class Structure_Builder(RealExpEnv):
     def match_atoms_designs(self, i = 0):
         atoms, designs, costs, _, _, _ = assignment(self.atoms, self.designs)
         j = np.flip(np.argsort(costs))[i]
-
         atom_chosen = atoms[j,:]
         design_chosen = designs[j,:]
         obstacle_list = []
@@ -186,6 +178,10 @@ class Structure_Builder(RealExpEnv):
      
     def find_path(self, max_step = 2):
         print('start:',self.atom_chosen, 'goal',self.design_chosen)
+        if np.linalg.norm(self.atom_chosen - self.design_chosen)< self.safe_radius_nm:
+            print('direct step, RRT not used')
+            return self.design_chosen, [self.design_chosen, self.atom_chosen]
+
         rrt = RRT(
             start=self.atom_chosen, goal=self.design_chosen, rand_area=[-2, 15],
             obstacle_list=self.obstacle_list, expand_dis= max_step, path_resolution=1)
@@ -217,6 +213,11 @@ class Structure_Builder(RealExpEnv):
             destination_nm_with_correction = destination_nm
 
         self.destination_absolute_nm, self.goal = self.get_destination(self.atom_start_absolute_nm, destination_nm_with_correction)
+        if np.linalg.norm(self.goal)>=1:
+            self.stop_lim = np.sqrt(3)*self.precision_lim
+        else:
+            self.stop_lim = self.precision_lim
+
         info = {'start_absolute_nm':self.atom_start_absolute_nm, 'goal_absolute_nm':self.destination_absolute_nm,
                 'start_absolute_nm_f':self.atom_absolute_nm_f, 'start_absolute_nm_b':self.atom_absolute_nm_b, 'img_info':self.img_info}
         self.dist_destination = np.linalg.norm(self.atom_absolute_nm - self.destination_absolute_nm)
@@ -259,12 +260,12 @@ class Structure_Builder(RealExpEnv):
         
         img_forward, img_backward, offset_nm, len_nm = self.createc_controller.scan_image(speed= self.speed)
         if self.use_anchor:
-            self.atom_absolute_nm_f, self.anchor_nm_f = get_atom_coordinate_nm_with_anchor(img_forward, offset_nm, len_nm, self.anchor_nm)
-            self.atom_absolute_nm_b, self.anchor_nm_b = get_atom_coordinate_nm_with_anchor(img_backward, offset_nm, len_nm, self.anchor_nm)
+            self.atom_absolute_nm_f, self.anchor_nm_f = get_atom_coordinate_nm_with_anchor(img_forward, offset_nm, len_nm, self.anchor_nm, self.obstacle_list)
+            self.atom_absolute_nm_b, self.anchor_nm_b = get_atom_coordinate_nm_with_anchor(img_backward, offset_nm, len_nm, self.anchor_nm, self.obstacle_list)
             self.anchor_nm = 0.5*(self.anchor_nm_f+self.anchor_nm_b)
         else:
-            self.atom_absolute_nm_f, _ = get_atom_coordinate_nm_with_anchor(img_forward, offset_nm, len_nm, None)
-            self.atom_absolute_nm_b, _ = get_atom_coordinate_nm_with_anchor(img_backward, offset_nm, len_nm, None)
+            self.atom_absolute_nm_f, _ = get_atom_coordinate_nm_with_anchor(img_forward, offset_nm, len_nm, None, self.obstacle_list)
+            self.atom_absolute_nm_b, _ = get_atom_coordinate_nm_with_anchor(img_backward, offset_nm, len_nm, None, self.obstacle_list)
 
         self.atom_absolute_nm = 0.5*(self.atom_absolute_nm_f+self.atom_absolute_nm_b)
         self.img_info = {'img_forward':img_forward,'img_backward':img_backward, 'offset_nm':offset_nm, 'len_nm':len_nm,
