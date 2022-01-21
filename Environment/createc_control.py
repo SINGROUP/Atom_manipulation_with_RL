@@ -23,7 +23,7 @@ class Createc_Controller:
                 if self.stm.stmready()==1:
                     print('succeed to connect with DispatchEx')
                     
-        def scan_image(self, DIR_NAME = None, BASE_NAME = None, counter = None, save = False):
+        def scan_image(self, DIR_NAME = None, BASE_NAME = None, counter = None, save = False, speed = None):
             """
             Arguments:
                 pixel (int)
@@ -53,6 +53,8 @@ class Createc_Controller:
             Xpiezoconst = float(self.stm.getparam("Xpiezoconst"))
             Ypiezoconst = float(self.stm.getparam("Ypiezoconst"))
             self.stm.setxyoffvolt(GainX*self.offset_nm[0]/Xpiezoconst,GainX*self.offset_nm[1]/Ypiezoconst)
+            if speed is not None:
+                self.set_speed(speed)
             self.stm.scanstart() #Starts a new STM scan. Similar to pressing the button Scanstart
             time.sleep(scan_time)
             while True:
@@ -218,6 +220,28 @@ class Createc_Controller:
                     self.stm.setparam('Biasvolt.[mV]', end_bias_mV)
                 else:
                     self.stm.setparam('Biasvolt.[mV]', end_bias_mV)
+
+        def set_speed(self, speed):
+            GainX = float(self.stm.getparam("GainX"))
+            DeltaX = float(self.stm.getparam("Delta X [Dac]"))
+            voltage_unit = 10
+            Xpiezoconst = float(self.stm.getparam("Xpiezoconst"))
+            #speed = DeltaX*voltage_unit*GainX*Piezoconstant/(2**19*DX_DDeltaX*20E-6)
+            DX_DDeltaX = (DeltaX*voltage_unit*GainX*Xpiezoconst)/(speed*2**19*20E-6)
+            self.stm.setparam('DX/DDeltaX', int(DX_DDeltaX))
+
+        def get_speed(self):
+            GainX = float(self.stm.getparam("GainX"))
+            DeltaX = float(self.stm.getparam("Delta X [Dac]"))
+            voltage_unit = 10
+            Xpiezoconst = float(self.stm.getparam("Xpiezoconst"))
+            DX_DDeltaX = float(self.stm.getparam("DX/DDeltaX"))
+            speed = DeltaX*voltage_unit*GainX*Xpiezoconst/(2**19*DX_DDeltaX*20E-6)
+            return speed
+
+
+
+
                     
         
                 

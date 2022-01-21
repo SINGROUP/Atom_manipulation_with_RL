@@ -20,7 +20,8 @@ from Environment.get_atom_coordinate import get_atom_coordinate_nm
 class RealExpEnv:
     
     def __init__(self, step_nm, max_mvolt, max_pcurrent_to_mvolt_ratio, goal_nm, template, current_jump, im_size_nm, offset_nm,
-                 manip_limit_nm, pixel, template_max_y, scan_mV, max_len, load_weight, random_scan_rate = 0.5,  correct_drift = False, bottom = True):
+                 manip_limit_nm, pixel, template_max_y, scan_mV, max_len, load_weight, pull_back_mV = None, pull_back_pA = None,
+                 random_scan_rate = 0.5, correct_drift = False, bottom = True):
         
         self.step_nm = step_nm
         self.max_mvolt = max_mvolt
@@ -51,6 +52,15 @@ class RealExpEnv:
         self.atom_move_detector = AtomJumpDetector_conv(data_len=2048, load_weight = load_weight)
         self.random_scan_rate = random_scan_rate
         self.accuracy, self.true_positive, self.true_negative = [], [], []
+        if pull_back_mV is None:
+            self.pull_back_mV = 10
+        else:
+            self.pull_back_mV = pull_back_mV
+
+        if pull_back_pA is None:
+            self.pull_back_pA = 57000
+        else:
+            self.pull_back_pA = pull_back_pA
 
     def reset(self, update_conv_net = True):
         self.len = 0
@@ -187,10 +197,10 @@ class RealExpEnv:
             if success:
                 print('cnn thinks there is atom movement')
                 return True
-            elif old_prediction and (np.random.random()>(self.random_scan_rate-0.4)):
+            elif old_prediction and (np.random.random()>(self.random_scan_rate-0.3)):
                 print('old prediction thinks there is atom movement')
                 return True
-            elif (np.random.random()>(self.random_scan_rate-0.2)) and (prediction>0.2):
+            elif (np.random.random()>(self.random_scan_rate-0.2)) and (prediction>0.35):
                 print('Random scan')
                 return True
             elif np.random.random()>self.random_scan_rate:
@@ -240,8 +250,8 @@ class RealExpEnv:
 
     def pull_atom_back(self):
         print('pulling atom back to center')
-        mV = 2500 #10
-        current = 60000 #57000
+        mV = self.pull_back_mV
+        current = self.pull_back_pA
         self.createc_controller.lat_manipulation(self.atom_absolute_nm[0], self.atom_absolute_nm[1],
                                                  np.mean(self.manip_limit_nm[:2])+2*np.random.random()-1,
                                                  np.mean(self.manip_limit_nm[2:])+2*np.random.random()-1,

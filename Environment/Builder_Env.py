@@ -74,18 +74,25 @@ def align_deisgn_stitching(all_atom_absolute_nm, design_nm, align_design_params)
 
 class Structure_Builder(RealExpEnv):
     def __init__(self, step_nm, max_mvolt, max_pcurrent_to_mvolt_ratio, goal_nm, current_jump, im_size_nm, offset_nm,
-                 pixel, scan_mV, max_len, safe_radius_nm = 1):
+                 pixel, scan_mV, max_len, safe_radius_nm = 1, speed = None, precision_lim = None):
         super(Structure_Builder, self).__init__(step_nm, max_mvolt, max_pcurrent_to_mvolt_ratio, goal_nm, None, current_jump,
                                                 im_size_nm, offset_nm, None, pixel, None, scan_mV, max_len, None, random_scan_rate = 0)
         self.atom_absolute_nm_f = None
         self.atom_absolute_nm_b = None
-        self.large_DX_DDeltaX = float(self.createc_controller.stm.getparam('DX/DDeltaX'))
+        #self.large_DX_DDeltaX = float(self.createc_controller.stm.getparam('DX/DDeltaX'))
         self.large_offset_nm = offset_nm
         self.large_len_nm = im_size_nm
         self.safe_radius_nm = safe_radius_nm
         self.anchor_nm = None
+        if speed is None:
+            self.speed = self.createc_controller.get_speed()
+        else:
+            self.speed = speed
+        if precision_lim is not None:
+            self.precision_lim = precision_lim
+        print('speed:', self.speed)
         
-    def reset_large(self, design_nm, align_design_mode = 'auto', align_design_params = {'atom_nm':None, 'design_nm':{}}):
+    def reset_large(self, design_nm, align_design_mode = 'auto', align_design_params = {'atom_nm':None, 'design_nm':None}):
         self.align_design_mode = align_design_mode
         self.num_atoms = design_nm.shape[0]
         self.all_atom_absolute_nm = self.scan_all_atoms(self.large_offset_nm, self.large_len_nm) 
@@ -94,7 +101,7 @@ class Structure_Builder(RealExpEnv):
         elif self.align_design_mode =='manual':
             self.atoms, self.designs, anchor = align_deisgn_stitching(self.all_atom_absolute_nm, design_nm, align_design_params)
         self.init_anchor = anchor
-        print('Use anchor:', self.use_anchor)
+
         plot_atoms_and_design(self.large_img_info, self.atoms,self.designs, self.init_anchor)
         self.design_nm = np.concatenate((self.designs, anchor.reshape((-1,2))))
         self.large_img_info |= {'design': self.design_nm}
@@ -108,6 +115,11 @@ class Structure_Builder(RealExpEnv):
             if (self.next_destinatio_nm is not None) and (self.paths is not None):
                 break
         offset_nm, len_nm = self.get_offset_len()
+        print('Use anchor:', self.use_anchor)
+        if np.linalg.norm(self.atom_chosen - self.design_chosen) > 1.5*self.goal_nm:
+            self.stop_lim = np.sqrt(3)*self.precision_lim
+        else:
+            self.stop_lim = self.precision_lim
         return self.atom_chosen, self.design_chosen, self.next_destinatio_nm, self.paths, self.anchor_chosen, offset_nm, len_nm
         
     def step_large(self, succeed, new_atom_position):
@@ -115,9 +127,9 @@ class Structure_Builder(RealExpEnv):
         self.large_img_info |= {'design': self.design_nm}
         self.atoms, new_anchor = get_atom_and_anchor(self.all_atom_absolute_nm, np.vstack(self.anchors))
         self.anchors = list(new_anchor)
-        if succeed:
-            self.update_after_success(new_atom_position)
-
+        done = False
+        if succeed and (np.linalg.norm(self.next_destinatio_nm - self.design_chosen)<0.01):
+            done = self.update_after_success(new_atom_position)
         for i in range(self.atoms.shape[0]):
             self.atom_chosen, self.design_chosen, self.obstacle_list = self.match_atoms_designs(i)
             self.anchor_chosen = get_anchor(self.atom_chosen, np.vstack(self.anchors))
@@ -126,7 +138,11 @@ class Structure_Builder(RealExpEnv):
                 break
 
         offset_nm, len_nm = self.get_offset_len()
-        return self.atom_chosen, self.design_chosen, self.next_destinatio_nm, self.paths, self.anchor_chosen, offset_nm, len_nm
+        if np.linalg.norm(self.atom_chosen - self.design_chosen) > 1.5*self.goal_nm:
+            self.stop_lim = np.sqrt(3)*self.precision_lim
+        else:
+            self.stop_lim = self.precision_lim
+        return self.atom_chosen, self.design_chosen, self.next_destinatio_nm, self.paths, self.anchor_chosen, offset_nm, len_nm, done
 
     def get_offset_len(self):
         len_nm_0 = 2*max(np.max(np.abs(self.anchor_chosen - self.atom_chosen)), 2)+1
@@ -152,6 +168,7 @@ class Structure_Builder(RealExpEnv):
         self.designs = np.delete(self.designs, (self.designs == self.design_chosen).all(axis=1).nonzero(), axis=0)
         print('designs after:', self.designs)
         self.anchors.append(new_atom_position)
+        return (self.atoms.shape[0] == 0) and (self.designs.shape == 0)
 
     def match_atoms_designs(self, i = 0):
         atoms, designs, costs, _, _, _ = assignment(self.atoms, self.designs)
@@ -218,7 +235,7 @@ class Structure_Builder(RealExpEnv):
         if done or jump:
             self.dist_destination, dist_start, dist_last = self.check_similarity()
             print('atom moves by:', dist_start)
-            done = done or (dist_start > 1.5*self.goal_nm) or (self.dist_destination < self.precision_lim)
+            done = done or (dist_start > 1.5*self.goal_nm) or (self.dist_destination < self.stop_lim)
             self.atom_move_detector.push(current_series, dist_last)
 
         next_state = np.concatenate((self.goal, (self.atom_absolute_nm -self.atom_start_absolute_nm)/self.goal_nm))
@@ -233,14 +250,14 @@ class Structure_Builder(RealExpEnv):
             self.len_nm = len_nm 
         if anchor_nm is not None:
             self.anchor_nm = anchor_nm 
-        if large_len_nm is not None:
+        '''if large_len_nm is not None:
             small_DX_DDeltaX = int(self.large_DX_DDeltaX*len_nm/large_len_nm)
-            self.createc_controller.stm.setparam('DX/DDeltaX', small_DX_DDeltaX)
+            self.createc_controller.stm.setparam('DX/DDeltaX', small_DX_DDeltaX)'''
 
         self.createc_controller.offset_nm = self.offset_nm
         self.createc_controller.im_size_nm = self.len_nm
         
-        img_forward, img_backward, offset_nm, len_nm = self.createc_controller.scan_image()
+        img_forward, img_backward, offset_nm, len_nm = self.createc_controller.scan_image(speed= self.speed)
         if self.use_anchor:
             self.atom_absolute_nm_f, self.anchor_nm_f = get_atom_coordinate_nm_with_anchor(img_forward, offset_nm, len_nm, self.anchor_nm)
             self.atom_absolute_nm_b, self.anchor_nm_b = get_atom_coordinate_nm_with_anchor(img_backward, offset_nm, len_nm, self.anchor_nm)
@@ -253,15 +270,16 @@ class Structure_Builder(RealExpEnv):
         self.img_info = {'img_forward':img_forward,'img_backward':img_backward, 'offset_nm':offset_nm, 'len_nm':len_nm,
                          'anchor': self.anchor_nm, 'atom_absolute_nm_f': self.atom_absolute_nm_f,
                          'atom_absolute_nm_b': self.atom_absolute_nm_b, 'atom_absolute_nm': self.atom_absolute_nm}
+        return self.atom_absolute_nm, None
 
 
     def scan_all_atoms(self, offset_nm, len_nm):
-        self.createc_controller.stm.setparam('DX/DDeltaX', self.large_DX_DDeltaX)
+        #self.createc_controller.stm.setparam('DX/DDeltaX', self.large_DX_DDeltaX)
         self.createc_controller.offset_nm = offset_nm
         self.createc_controller.im_size_nm = len_nm
         self.offset_nm = offset_nm
         self.len_nm = len_nm
-        img_forward, img_backward, offset_nm, len_nm = self.createc_controller.scan_image()
+        img_forward, img_backward, offset_nm, len_nm = self.createc_controller.scan_image(speed= self.speed)
         all_atom_absolute_nm_f = get_all_atom_coordinate_nm(img_forward, offset_nm, len_nm)
         all_atom_absolute_nm_b = get_all_atom_coordinate_nm(img_backward, offset_nm, len_nm)
 

@@ -62,8 +62,8 @@ def blob_detection(img):
     params.blobColor = 255
     params.filterByArea = True
     params.minArea = 1
-    params.maxArea = 1000
-    params.minDistBetweenBlobs = 10
+    params.maxArea = 120
+    params.minDistBetweenBlobs = 5
     ###create BlobDetector
     detector = cv2.SimpleBlobDetector_create(params)
     ###Detect

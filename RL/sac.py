@@ -26,10 +26,11 @@ class ReplayMemory:
         return len(self.buffer)
 
 class HerReplayMemory(ReplayMemory):
-    def __init__(self, capacity, env):
+    def __init__(self, capacity, env, strategy = 'final'):
         super(HerReplayMemory, self).__init__(capacity)
         self.env = env
         self.n_sampled_goal = 2
+        self.strategy = strategy
     def sample(self, batch_size, c_k):
         N = len(self.buffer)
         if c_k>N:
@@ -50,10 +51,11 @@ class HerReplayMemory(ReplayMemory):
                 new_next_state[:2] = final_next_state[2:]
                 new_reward = self.env.compute_reward(new_state, new_next_state)
                 batch.append((new_state, action, new_reward, new_next_state, mask))
+        print('No. of samples:', len(batch))
         state, action, reward, next_state, mask = map(np.stack,zip(*batch))
         return state, action, reward, next_state, mask
 
-    def sample_goals(self, idx, strategy = 'final'):
+    def sample_goals(self, idx):
         #get done state idx
         i = copy.copy(idx) 
          
@@ -63,9 +65,9 @@ class HerReplayMemory(ReplayMemory):
                 break
             else:
                 i-=1
-        if strategy == 'final' or i == idx:
+        if self.strategy == 'final' or i == idx:
             return [i]
-        elif strategy == 'future':
+        elif self.strategy == 'future':
             iss = np.random.choice(np.arange(i, idx+1), min(idx-i+1, 3))
             return iss
 
@@ -221,7 +223,7 @@ class sac_agent():
         total_norm = total_norm ** (1. / 2)
         print(total_norm)'''
         
-        torch.nn.utils.clip_grad_norm_(self.critic.parameters(), 5, norm_type=2.0)
+        torch.nn.utils.clip_grad_norm_(self.critic.parameters(), 10, norm_type=2.0)
         self.critic_optim.step()
         
         if train_pi:
@@ -233,7 +235,7 @@ class sac_agent():
             policy_loss.backward()
             policy_norm = self.get_grad_norm(self.policy)
             print('Training','critic norm:', critic_norm, 'policy norm:', policy_norm)
-            torch.nn.utils.clip_grad_norm_(self.policy.parameters(), 1, norm_type=2.0)
+            torch.nn.utils.clip_grad_norm_(self.policy.parameters(), 2, norm_type=2.0)
             self.policy_optim.step()
             
             alpha_loss = -(self.log_alpha*(log_pi+self.target_entropy).detach()).mean()
