@@ -33,6 +33,18 @@ class AtomDrop:
                                 'all_atom_absolute_nm_b':self.all_atom_absolute_nm_b}
         return self.all_atom_absolute_nm
 
+    def find_min_Z(self, init_Z, Z_step, x_nm, y_nm):
+        all_atom = None
+        Z = init_Z
+        while all_atom is None:
+            self.createc_controller.tip_form(Z, x_nm, y_nm)
+            all_atom = self.scan_all_atoms(self.createc_controller.get_offset_nm(), self.createc_controller.get_len_nm())
+            Z+=Z_step
+        print('Dropped atom:',all_atom,'using Approach Z:', Z)
+
+
+
+
 
     '''def find_drop_spot(self):
         pass
