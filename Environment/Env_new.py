@@ -105,7 +105,7 @@ class RealExpEnv:
             
         if done or jump:
             self.dist_destination, dist_start, dist_last = self.check_similarity()
-            print('atom moves by:', dist_start)
+            print('atom moves by: {:.3f} nm'.format(dist_start))
             done = done or (dist_start > 1.5*self.goal_nm) or (self.dist_destination < self.precision_lim) or self.out_of_range(self.atom_absolute_nm, self.manip_limit_nm)
             self.atom_move_detector.push(current_series, dist_last)
 
@@ -189,16 +189,14 @@ class RealExpEnv:
             return False
 
     def detect_current_jump(self, current):
-        old_prediction = self.old_detect_current_jump(current)
-        print('Old prediction:', old_prediction)
-
         if current is not None:
             success, prediction = self.atom_move_detector.predict(current)
+            old_prediction = self.old_detect_current_jump(current)
+            print('CNN prediction:',prediction,'Old prediction:', old_prediction)
             if success:
                 print('cnn thinks there is atom movement')
                 return True
             elif old_prediction and (np.random.random()>(self.random_scan_rate-0.3)):
-                print('old prediction thinks there is atom movement')
                 return True
             elif (np.random.random()>(self.random_scan_rate-0.2)) and (prediction>0.35):
                 print('Random scan')

@@ -9,12 +9,16 @@ from collections import namedtuple
 latmandata = namedtuple('latmandata',['time','x','y','current','dI_dV','topography'])
 
 class Createc_Controller:
-        def __init__(self, im_size_nm, offset_nm, pixel, scan_mV):
+        def __init__(self, im_size_nm = None, offset_nm = None, pixel = None, scan_mV =None):
             
-            self.im_size_nm = im_size_nm
-            self.offset_nm = offset_nm
-            self.pixel = pixel
-            self.scan_mV = scan_mV
+            if im_size_nm is not None:
+                self.im_size_nm = im_size_nm
+            if offset_nm is not None:
+                self.offset_nm = offset_nm
+            if pixel is not None:
+                self.pixel = pixel
+            if scan_mV is not None:
+                self.scan_mV = scan_mV
             self.stm=win32com.client.Dispatch("pstmafm.stmafmrem")
             if self.stm.stmready()==1:
                 print('succeed to connect')
@@ -130,10 +134,22 @@ class Createc_Controller:
             Nx = float(self.stm.getparam('Num.X'))
             pixel_to_A_X = DeltaX*10*GainX*Xpiezoconst/DAC_unit
             x_start_pixel = (x_start_nm-(offset_nm[0]-0.5*len_nm))*10/pixel_to_A_X
-            x_end_pixel = (x_end_nm - (offset_nm[0]-0.5*len_nm))*10/pixel_to_A_X
+            x_start_pixel = int(np.rint(x_start_pixel))
             y_start_pixel = (y_start_nm - offset_nm[1])*10/pixel_to_A_X
-            y_end_pixel = (y_end_nm - offset_nm[1])*10/pixel_to_A_X
-            return int(np.rint(x_start_pixel)), int(np.rint(y_start_pixel)), int(np.rint(x_end_pixel)), int(np.rint(y_end_pixel))
+            y_start_pixel = int(np.rint(y_start_pixel))
+            if x_end_nm is not None:
+                x_end_pixel = (x_end_nm - (offset_nm[0]-0.5*len_nm))*10/pixel_to_A_X
+                x_end_pixel = int(np.rint(x_end_pixel))
+            else:
+                x_end_pixel = None
+
+            if y_end_nm is not None:
+                y_end_pixel = (y_end_nm - offset_nm[1])*10/pixel_to_A_X
+                y_end_pixel = int(np.rint(y_end_pixel))
+            else:
+                y_end_pixel = None
+            
+            return x_start_pixel, y_start_pixel, x_end_pixel, y_end_pixel
         
         def set_xy_nm(self, nm):
             """
@@ -238,6 +254,43 @@ class Createc_Controller:
             DX_DDeltaX = float(self.stm.getparam("DX/DDeltaX"))
             speed = DeltaX*voltage_unit*GainX*Xpiezoconst/(2**19*DX_DDeltaX*20E-6)
             return speed
+
+        def set_Z_approach(self,A):
+            Zpiezoconst = float(self.stm.getparam("Zpiezoconst"))
+            self.stm.setparam('TipForm_Z', 1000*A/Zpiezoconst)
+
+        def tip_form(self,A, x_nm, y_nm):
+            offset_nm = self.get_offset_nm() 
+            len_nm = self.get_len_nm()
+            print('offset nm:',offset_nm,'len nm:',len_nm)
+            if isinstance(len_nm, float) or isinstance(len_nm, int):
+                len_nm = [len_nm, len_nm]
+
+            self.set_Z_approach(A)
+            x_pixel, y_pixel, _, _ = self.nm_to_pixel(self,x_nm, y_nm, None, None, offset_nm, len_nm)
+            self.stm.btn_tipform(x_pixel, y_pixel)
+
+        def get_offset_nm(self):
+            DAC_unit = 2**19
+            volt_unit = 10
+            Xgain = float(self.stm.getparam("GainX"))
+            Ygain = float(self.stm.getparam("GainY"))
+            Xpiezoconst = float(self.stm.getparam("Xpiezoconst"))
+            Ypiezoconst = float(self.stm.getparam("Ypiezoconst"))
+            x_nm = -0.1*Xpiezoconst*volt_unit*float(self.stm.getparam('OffsetX'))*Xgain/DAC_unit
+            y_nm = -0.1*Ypiezoconst*volt_unit*float(self.stm.getparam('OffsetY'))*Ygain/DAC_unit
+            return x_nm, y_nm
+
+        def get_len_nm(self):
+            DAC_unit = 2**19
+            volt_unit = 10
+            GainX = float(self.stm.getparam("GainX"))
+            Xpiezoconst = float(self.stm.getparam("Xpiezoconst"))
+            Nx = float(self.stm.getparam('Num.X'))
+            Delta_X = float(self.stm.getparam('Delta X [Dac]'))
+            len_nm = Delta_X*Nx*volt_unit*GainX*Xpiezoconst/(10*DAC_unit)
+            return len_nm
+
 
 
 
