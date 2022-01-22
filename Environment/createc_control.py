@@ -263,11 +263,8 @@ class Createc_Controller:
             offset_nm = self.get_offset_nm() 
             len_nm = self.get_len_nm()
             print('offset nm:',offset_nm,'len nm:',len_nm)
-            if isinstance(len_nm, float) or isinstance(len_nm, int):
-                len_nm = [len_nm, len_nm]
-
             self.set_Z_approach(A)
-            x_pixel, y_pixel, _, _ = self.nm_to_pixel(self,x_nm, y_nm, None, None, offset_nm, len_nm)
+            x_pixel, y_pixel, _, _ = self.nm_to_pixel(x_nm, y_nm, None, None, offset_nm, len_nm)
             self.stm.btn_tipform(x_pixel, y_pixel)
 
         def get_offset_nm(self):
