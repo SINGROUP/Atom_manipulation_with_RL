@@ -262,10 +262,12 @@ class Createc_Controller:
         def tip_form(self,A, x_nm, y_nm):
             offset_nm = self.get_offset_nm() 
             len_nm = self.get_len_nm()
-            print('offset nm:',offset_nm,'len nm:',len_nm)
+            #print('offset nm:',offset_nm,'len nm:',len_nm)
             self.set_Z_approach(A)
             x_pixel, y_pixel, _, _ = self.nm_to_pixel(x_nm, y_nm, None, None, offset_nm, len_nm)
+            #print(x_pixel, y_pixel)
             self.stm.btn_tipform(x_pixel, y_pixel)
+            self.stm.waitms(50)
 
         def get_offset_nm(self):
             DAC_unit = 2**19

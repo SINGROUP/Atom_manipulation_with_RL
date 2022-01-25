@@ -1,12 +1,15 @@
 from Environment.createc_control import Createc_Controller
 import numpy as np
 from Environment.get_atom_coordinate import get_all_atom_coordinate_nm
-
+from Environment.data_visualization import plot_atoms_and_design
 
 class AtomDrop:
-    def __init__(self, pixel, scan_mV):
+    def __init__(self, pixel, scan_mV, speed = None):
         self.createc_controller = Createc_Controller(pixel = pixel, scan_mV = scan_mV)
-
+        if speed is not None:
+            self.speed = speed
+        else:
+            self.speed = self.createc_controller.get_speed()
     def scan_all_atoms(self, offset_nm, len_nm):
         #self.createc_controller.stm.setparam('DX/DDeltaX', self.large_DX_DDeltaX)
         self.createc_controller.offset_nm = offset_nm
@@ -36,9 +39,11 @@ class AtomDrop:
     def find_min_Z(self, init_Z, Z_step, x_nm, y_nm):
         all_atom = None
         Z = init_Z
-        while all_atom is None:
+        while (all_atom is None) or all_atom.size ==0:
             self.createc_controller.tip_form(Z, x_nm, y_nm)
             all_atom = self.scan_all_atoms(self.createc_controller.get_offset_nm(), self.createc_controller.get_len_nm())
+            print('Z approach:', Z)
+            plot_atoms_and_design(self.large_img_info, self.all_atom_absolute_nm, None, None, show_legend=False)
             Z+=Z_step
         print('Dropped atom:',all_atom,'using Approach Z:', Z)
 

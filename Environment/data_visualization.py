@@ -17,7 +17,7 @@ def plot_graph(reward, precision, alpha, episode_len, avg_rewards, avg_alphas, a
     ax_plot_graph(reward, avg_rewards, ax, 'Episode reward')
     #ax.set_ylim([-8, np.max(avg_rewards)+1])
     ax_plot_graph(precision, avg_precisions, ax1, 'Precision (nm)')
-    ax1.set_ylim([0, 1])
+    #ax1.set_ylim([0, 1])
     ax_plot_graph(alpha, avg_alphas, ax2, 'alpha')
     ax_plot_graph(episode_len, avg_episode_lengths, ax3, 'Episode lengths')
     plt.show()
@@ -102,17 +102,21 @@ def plot_large_frame(img_info, atom_chosen, design_chosen, anchor_chosen, next_d
     ax.legend(frameon = False, labelcolor = '#FAEBE0')
     plt.show()
 
-def plot_atoms_and_design(img_info, all_atoms, design, anchor):
+def plot_atoms_and_design(img_info, all_atoms, design, anchor, show_legend = True):
     _, ax = plt.subplots()
     img = img_info['img_forward']
     offset_nm = img_info['offset_nm']
     len_nm = img_info['len_nm']
     extent = (offset_nm[0]-0.5*len_nm[0], offset_nm[0]+0.5*len_nm[0], offset_nm[1]+len_nm[0], offset_nm[1])
-    ax.imshow(img, extent = extent)
-    ax.scatter(all_atoms[:,0], all_atoms[:,1], color='#7027A0' ,label='atom')
-    ax.scatter(design[:,0],design[:,1], color='#1DB9C3', label='design')
-    ax.scatter(anchor[0], anchor[1], color = '#F56FAD', label='anchor')
-    ax.legend(frameon = False, labelcolor = '#FAEBE0')
+    ax.imshow(img, extent = extent, cmap='Greys')
+    if (all_atoms is not None) and (all_atoms.size !=0):
+        ax.scatter(all_atoms[:,0], all_atoms[:,1], color='#7027A0' ,label='atom')
+    if design is not None:
+        ax.scatter(design[:,0],design[:,1], color='#1DB9C3', label='design')
+    if anchor is not None:
+        ax.scatter(anchor[0], anchor[1], color = '#F56FAD', label='anchor')
+    if show_legend:
+        ax.legend(frameon = False, labelcolor = '#FAEBE0')
     plt.show()
 
 

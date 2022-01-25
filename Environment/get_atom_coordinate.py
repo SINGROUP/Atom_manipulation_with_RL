@@ -61,7 +61,7 @@ def blob_detection(img):
     params.minThreshold = 40
     params.blobColor = 255
     params.filterByArea = True
-    params.minArea = 1
+    params.minArea = 10
     params.maxArea = 120
     params.minDistBetweenBlobs = 5
     ###create BlobDetector
