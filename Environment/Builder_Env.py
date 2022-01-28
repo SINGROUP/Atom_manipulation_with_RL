@@ -92,7 +92,8 @@ class Structure_Builder(RealExpEnv):
             self.precision_lim = precision_lim
         print('speed:', self.speed)
         
-    def reset_large(self, design_nm, align_design_mode = 'auto', align_design_params = {'atom_nm':None, 'design_nm':None}):
+    def reset_large(self, design_nm, align_design_mode = 'auto', align_design_params = {'atom_nm':None, 'design_nm':None}, sequence_mode = 'design'):
+        self.sequence_mode = sequence_mode
         self.align_design_mode = align_design_mode
         self.num_atoms = design_nm.shape[0]
         self.all_atom_absolute_nm = self.scan_all_atoms(self.large_offset_nm, self.large_len_nm) 
@@ -125,7 +126,7 @@ class Structure_Builder(RealExpEnv):
 
     def get_the_returns(self):
         for i in range(self.atoms.shape[0]):
-            self.atom_chosen, self.design_chosen, self.obstacle_list = self.match_atoms_designs(i)
+            self.atom_chosen, self.design_chosen, self.obstacle_list = self.match_atoms_designs(i, mode = self.sequence_mode)
             if len(self.anchors) == 1:
                 self.anchor_chosen = self.init_anchor
             else:
@@ -163,9 +164,12 @@ class Structure_Builder(RealExpEnv):
         self.anchors.append(new_atom_position)
         return (self.atoms.shape[0] == 0) and (self.designs.shape == 0)
 
-    def match_atoms_designs(self, i = 0):
+    def match_atoms_designs(self, i = 0, mode='distance'):
         atoms, designs, costs, _, _, _ = assignment(self.atoms, self.designs)
-        j = np.flip(np.argsort(costs))[i]
+        if mode=='design':
+            j = np.flip(np.argsort(costs))[i]
+        elif mode=='anchor':
+            j = np.flip(np.argsort(cdist(atoms, np.vstack(self.anchors)).min(axis = 1)))[i]
         atom_chosen = atoms[j,:]
         design_chosen = designs[j,:]
         obstacle_list = []
@@ -206,7 +210,9 @@ class Structure_Builder(RealExpEnv):
         self.scan_atom(anchor_nm, offset_nm, len_nm, large_len_nm)
 
         self.atom_start_absolute_nm = self.atom_absolute_nm
-        print('anchor from small scan:', self.anchor_nm, 'anchor from large scan:', anchor_nm)
+        if self.use_anchor:
+            print('anchor from small scan:', self.anchor_nm, 'large scan:', anchor_nm)
+        else: print('not using anchor')
         if (self.anchor_nm is not None) and self.use_anchor:
             destination_nm_with_correction = destination_nm + self.anchor_nm - anchor_nm
         else:

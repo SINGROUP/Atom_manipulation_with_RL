@@ -60,7 +60,7 @@ class Createc_Controller:
             if speed is not None:
                 self.set_speed(speed)
             self.stm.scanstart() #Starts a new STM scan. Similar to pressing the button Scanstart
-            time.sleep(scan_time)
+            time.sleep(scan_time -2)
             while True:
                 time.sleep(2)
                 scanstatus = self.stm.scanstatus
