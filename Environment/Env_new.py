@@ -18,6 +18,9 @@ importlib.reload(Environment.get_atom_coordinate)
 from Environment.get_atom_coordinate import get_atom_coordinate_nm
 
 class RealExpEnv:
+    """
+    Environment for reinforcement learning through interaction with real-world STM
+    """
     
     def __init__(self, step_nm, max_mvolt, max_pcurrent_to_mvolt_ratio, goal_nm, template, current_jump, im_size_nm, offset_nm,
                  manip_limit_nm, pixel, template_max_y, scan_mV, max_len, load_weight, pull_back_mV = None, pull_back_pA = None,
