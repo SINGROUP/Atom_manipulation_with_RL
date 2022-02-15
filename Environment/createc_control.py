@@ -111,6 +111,11 @@ class Createc_Controller:
                 return None
         
         def get_Delta_X(self, im_size_nm):
+            """
+            Get the DeltaX value for a given image size
+            Arguments:
+                    im_size_nm (float): image size in nm
+            """
             DAC_unit = 2**19
             volt_unit = 10
             GainX = float(self.stm.getparam("GainX"))
@@ -121,11 +126,24 @@ class Createc_Controller:
             return int(Delta_X)
         
         def get_scan_time(self):
+            """
+            Estimate scan time
+            """
             scan_time = float(self.stm.getparam('Sec/Image:'))
             scan_time = scan_time / 2 * (1 + 1 / float(self.stm.getparam('Delay Y')))
             return scan_time
         
         def nm_to_pixel(self,x_start_nm, y_start_nm, x_end_nm, y_end_nm, offset_nm, len_nm):
+            """
+            Convert values from STM coordinates (nm) to pixel coordinates
+            Arguments:
+                    x_start_nm, y_start_nm, x_end_nm, y_end_nm (float): tip movement positions in STM coordinates (nm)
+                    offset_nm (np.array): the XY offset value in STM coordinates (nm)
+                    len_nm (float): image size in nm
+            Return: 
+                    x_start_pixel, y_start_pixel, x_end_pixel, y_end_pixel: tip movement positions in pixel coordinates
+
+            """
             DeltaX = float(self.stm.getparam('Delta X [Dac]'))
             DAC_unit = 2**19
             volt_unit = 10
@@ -238,6 +256,11 @@ class Createc_Controller:
                     self.stm.setparam('Biasvolt.[mV]', end_bias_mV)
 
         def set_speed(self, speed):
+            """
+            Set the scan speed 
+            Arguments:
+                speed (float) in A/s
+            """
             GainX = float(self.stm.getparam("GainX"))
             DeltaX = float(self.stm.getparam("Delta X [Dac]"))
             voltage_unit = 10
@@ -247,6 +270,9 @@ class Createc_Controller:
             self.stm.setparam('DX/DDeltaX', int(DX_DDeltaX))
 
         def get_speed(self):
+            """
+            Get the scan speed in A/s
+            """
             GainX = float(self.stm.getparam("GainX"))
             DeltaX = float(self.stm.getparam("Delta X [Dac]"))
             voltage_unit = 10
@@ -255,11 +281,24 @@ class Createc_Controller:
             speed = DeltaX*voltage_unit*GainX*Xpiezoconst/(2**19*DX_DDeltaX*20E-6)
             return speed
 
-        def set_Z_approach(self,A):
+        def set_Z_approach(self, A):
+            """
+            Set Z approach value in A
+
+            Arguments:
+                A (float): Z approach value in A
+            """
             Zpiezoconst = float(self.stm.getparam("Zpiezoconst"))
             self.stm.setparam('TipForm_Z', 1000*A/Zpiezoconst)
 
-        def tip_form(self,A, x_nm, y_nm):
+        def tip_form(self, A, x_nm, y_nm):
+            """
+            Perform tip forming
+
+            Arguments:
+                A (float): Z approach value in A
+                x_nm, y_nm (float): STM coordinates (nm)
+            """
             offset_nm = self.get_offset_nm() 
             len_nm = self.get_len_nm()
             #print('offset nm:',offset_nm,'len nm:',len_nm)
@@ -270,6 +309,9 @@ class Createc_Controller:
             self.stm.waitms(50)
 
         def get_offset_nm(self):
+            """
+            Get XY offset value in nm
+            """
             DAC_unit = 2**19
             volt_unit = 10
             Xgain = float(self.stm.getparam("GainX"))
@@ -281,6 +323,9 @@ class Createc_Controller:
             return x_nm, y_nm
 
         def get_len_nm(self):
+            """
+            Get image size value in nm
+            """
             DAC_unit = 2**19
             volt_unit = 10
             GainX = float(self.stm.getparam("GainX"))

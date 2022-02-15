@@ -63,6 +63,15 @@ class RealExpEnv:
             self.pull_back_pA = pull_back_pA
 
     def reset(self, update_conv_net = True):
+        """
+        Reset the environment
+        Arguments:
+            update_conv_net (bool): whether to update the parameters of the AtomJumpDetector_conv CNN
+
+        Return:
+            self.state (np.array) 
+            info (dict)
+        """
         self.len = 0
 
         if (len(self.atom_move_detector.currents_val)>self.atom_move_detector.batch_size) and update_conv_net:
@@ -94,6 +103,17 @@ class RealExpEnv:
         return self.state, info
     
     def step(self, action):
+        """
+        Take a step in the environment with the given action
+        Arguments:
+            action (np.array)
+
+        Return:
+            next_state (np.array)
+            reward (float)
+            done (bool)
+            info (dict)
+        """
         x_start_nm , y_start_nm, x_end_nm, y_end_nm, mvolt, pcurrent = self.action_to_latman_input(action)
         current_series, d = self.step_latman(x_start_nm , y_start_nm, x_end_nm, y_end_nm, mvolt, pcurrent)
         info = {'current_series':current_series, 'd': d, 'start_nm':  np.array([x_start_nm , y_start_nm]), 'end_nm':np.array([x_end_nm , y_end_nm])}
@@ -119,11 +139,28 @@ class RealExpEnv:
         self.state = next_state
         return next_state, reward, done, info
 
-    def calculate_potential(self,state):
+    def calculate_potential(self, state):
+        """
+        Caculate the reward potential based on state
+        Arguments:
+            state (np.array)
+
+        Return:
+            -dist/self.lattice_constant (float): reward potential
+            dist (float): the precision, i.e. the distance between the atom and the target
+        """
         dist = np.linalg.norm(state[:2]*self.goal_nm - state[2:]*self.goal_nm)
         return -dist/self.lattice_constant, dist
 
     def compute_reward(self, state, next_state):
+        """
+        Caculate the reward based on state and next state
+        Arguments:
+            state, next_state (np.array)
+
+        Return:
+            reward (float)
+        """
         old_potential, _ = self.calculate_potential(state)
         new_potential, dist = self.calculate_potential(next_state)
         #print('old potential:', old_potential, 'new potential:', new_potential)
@@ -131,6 +168,13 @@ class RealExpEnv:
         return reward
     
     def scan_atom(self):
+        """
+        Take a STM scan and extract the atom position
+
+        Return:
+            self.atom_absolute_nm (np.array): atom position in STM coordinates (nm) 
+            self.atom_relative_nm (np.array): atom position relative to the template position in STM coordinates (nm)
+        """
         img_forward, img_backward, offset_nm, len_nm = self.createc_controller.scan_image()
         self.img_info = {'img_forward':img_forward,'img_backward':img_backward, 'offset_nm':offset_nm, 'len_nm':len_nm}
         atom_absolute_nm_f, atom_relative_nm_f, template_nm_f, template_wh_f  = get_atom_coordinate_nm(img_forward, offset_nm, len_nm, self.template, self.template_max_y, self.bottom)
@@ -162,6 +206,18 @@ class RealExpEnv:
         return self.atom_absolute_nm, self.atom_relative_nm
     
     def get_destination(self, atom_relative_nm, atom_absolute_nm, goal_nm):
+        """
+        Uniformly sample a new target that is within the self.inner_limit_nm
+        Arguments:
+            atom_absolute_nm (np.array): atom position in STM coordinates (nm) 
+            atom_relative_nm (np.array): atom position relative to the template position in STM coordinates (nm)
+            goal_nm (float): ditance between the current atom position and the target position in nm
+
+        Return:
+            destination_relative_nm (np.array): target position relative to the template position in STM coordinates (nm) 
+            destination_absolute_nm (np.array): target position in STM coordinates (nm) 
+            dr/self.goal_nm (np.array): target position relative to the initial atom position in STM coordinates (nm) 
+        """
         while True:
             r = np.random.random()
             angle = 2*np.pi*r
@@ -173,6 +229,17 @@ class RealExpEnv:
         return destination_relative_nm, destination_absolute_nm, dr/self.goal_nm
         
     def action_to_latman_input(self, action):
+        """
+        Convert action to lateral manipulation parameter input to Createc
+        Arguments:
+            action (np.array) 
+
+        Return:
+            x_start_nm, y_start_nm, x_end_nm, y_end_nm (float): start and end position of the tip movements in nm
+            mvolt (float): bias in mV
+            pcurrent (float): current setpoint in pA
+        """
+        
         x_start_nm = action[0]*self.step_nm
         y_start_nm = action[1]*self.step_nm
         x_end_nm = action[2]*self.goal_nm
@@ -181,7 +248,49 @@ class RealExpEnv:
         pcurrent = np.clip(action[5], a_min = None, a_max=1)*self.max_pcurrent_to_mvolt_ratio*mvolt
         return x_start_nm , y_start_nm, x_end_nm, y_end_nm, mvolt, pcurrent
 
+    def step_latman(self, x_start_nm, y_start_nm, x_end_nm, y_end_nm, mvoltage, pcurrent):
+        """
+        Execute the action in Createc
+        Arguments:
+            x_start_nm, y_start_nm, x_end_nm, y_end_nm (float): start and end position of the tip movements in nm
+            mvolt (float): bias in mV
+            pcurrent (float): current setpoint in pA 
+
+        Return:
+            current (np.array): manipulation current trace
+            d (float): tip movement distance 
+        """
+        x_start_nm+=self.atom_absolute_nm[0]
+        x_end_nm+=self.atom_absolute_nm[0]
+        y_start_nm+=self.atom_absolute_nm[1]
+        y_end_nm+=self.atom_absolute_nm[1]
+        x_start_nm = np.clip(x_start_nm, a_min=self.manip_limit_nm[0], a_max=self.manip_limit_nm[1])
+        y_start_nm = np.clip(y_start_nm, a_min=self.manip_limit_nm[2], a_max=self.manip_limit_nm[3])
+        x_end_nm = np.clip(x_end_nm, a_min=self.manip_limit_nm[0], a_max=self.manip_limit_nm[1])
+        y_end_nm = np.clip(y_end_nm, a_min=self.manip_limit_nm[2], a_max=self.manip_limit_nm[3])
+        if [x_start_nm, y_start_nm] != [x_end_nm, y_end_nm]:
+            data = self.createc_controller.lat_manipulation(x_start_nm, y_start_nm, x_end_nm, y_end_nm, mvoltage, pcurrent, self.offset_nm, self.len_nm)
+            if data is not None:
+                current = np.array(data.current).flatten()
+                x = np.array(data.x)
+                y = np.array(data.y)
+                d = np.sqrt(((x-x[0])**2 + (y-y[0])**2))
+            else:
+                current = None
+                d = None
+            return current, d
+        else:
+            return None, None
+
     def old_detect_current_jump(self, current):
+        """
+        Estimate if atom has moved based on the gradient of the manipulation current trace
+        Arguments:
+            current (np.array): manipulation current trace
+
+        Return:
+            bool: whether the atom has likely moved
+        """
         if current is not None:
             diff = findiff.FinDiff(0,1,acc=6)(current)[3:-3]
             return np.sum(np.abs(diff)>self.current_jump*np.std(current)) > 2
@@ -189,6 +298,14 @@ class RealExpEnv:
             return False
 
     def detect_current_jump(self, current):
+        """
+        Estimate if atom has moved based on AtomJumpDetector_conv and the gradient of the manipulation current trace
+        Arguments:
+            current (np.array): manipulation current trace
+
+        Return:
+            bool: whether the atom has likely moved
+        """
         if current is not None:
             success, prediction = self.atom_move_detector.predict(current)
             old_prediction = self.old_detect_current_jump(current)
@@ -211,30 +328,13 @@ class RealExpEnv:
             print('CNN and old prediction both say no movement')
             return False
         
-    def step_latman(self, x_start_nm, y_start_nm, x_end_nm, y_end_nm, mvoltage, pcurrent):
-        x_start_nm+=self.atom_absolute_nm[0]
-        x_end_nm+=self.atom_absolute_nm[0]
-        y_start_nm+=self.atom_absolute_nm[1]
-        y_end_nm+=self.atom_absolute_nm[1]
-        x_start_nm = np.clip(x_start_nm, a_min=self.manip_limit_nm[0], a_max=self.manip_limit_nm[1])
-        y_start_nm = np.clip(y_start_nm, a_min=self.manip_limit_nm[2], a_max=self.manip_limit_nm[3])
-        x_end_nm = np.clip(x_end_nm, a_min=self.manip_limit_nm[0], a_max=self.manip_limit_nm[1])
-        y_end_nm = np.clip(y_end_nm, a_min=self.manip_limit_nm[2], a_max=self.manip_limit_nm[3])
-        if [x_start_nm, y_start_nm] != [x_end_nm, y_end_nm]:
-            data = self.createc_controller.lat_manipulation(x_start_nm, y_start_nm, x_end_nm, y_end_nm, mvoltage, pcurrent, self.offset_nm, self.len_nm)
-            if data is not None:
-                current = np.array(data.current).flatten()
-                x = np.array(data.x)
-                y = np.array(data.y)
-                d = np.sqrt(((x-x[0])**2 + (y-y[0])**2))
-            else:
-                current = None
-                d = None
-            return current, d
-        else:
-            return None, None
-        
     def check_similarity(self):
+        """
+        Take a STM scan and calculate the distance between the atom and the target, the start position, the previous position
+
+        Return:
+            dist_destination, dist_start, dist_last (float): distance (nm) between the atom and the target, the start position, the previous position
+        """
         old_atom_absolute_nm = self.atom_absolute_nm
         self.atom_absolute_nm, self.atom_relative_nm = self.scan_atom()
         dist_destination = np.linalg.norm(self.atom_absolute_nm - self.destination_absolute_nm)
@@ -243,10 +343,21 @@ class RealExpEnv:
         return dist_destination, dist_start, dist_last
     
     def out_of_range(self, nm, limit_nm):
+        """
+        Check if the coordinates nm is outside of the limit_nm
+        Arguments:
+            nm (np.array): STM coordinates in nm
+            limit_nm (np.array): [left, right, up, down] limit in STM coordinates in nm
+        Return:
+            bool: whether the atom has likely moved
+        """
         out = np.any((nm-limit_nm[[0,2]])*(nm - limit_nm[[1,3]])>0, axis=-1)
         return out
 
     def pull_atom_back(self):
+        """
+        Pull atom to the center of self.manip_limit_nm with self.pull_back_mV, self.pull_back_pA
+        """
         print('pulling atom back to center')
         mV = self.pull_back_mV
         current = self.pull_back_pA
