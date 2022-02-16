@@ -1,27 +1,13 @@
 from Environment.createc_control import Createc_Controller
 import numpy as np
-from matplotlib import pyplot as plt
-#import get_atom_coordinate
-import importlib
-#importlib.reload(get_atom_coordinate)
 from Environment.get_atom_coordinate import get_atom_coordinate_nm
-import scipy.spatial as spatial
 import findiff
-import pdb
-import scipy
 from Environment.atom_jump_detection import AtomJumpDetector_conv
-import Environment.atom_jump_detection
-importlib.reload(Environment.atom_jump_detection)
-from Environment.atom_jump_detection import AtomJumpDetector_conv
-import Environment.get_atom_coordinate
-importlib.reload(Environment.get_atom_coordinate)
-from Environment.get_atom_coordinate import get_atom_coordinate_nm
 
 class RealExpEnv:
     """
     Environment for reinforcement learning through interaction with real-world STM
     """
-    
     def __init__(self, step_nm, max_mvolt, max_pcurrent_to_mvolt_ratio, goal_nm, template, current_jump, im_size_nm, offset_nm,
                  manip_limit_nm, pixel, template_max_y, scan_mV, max_len, load_weight, pull_back_mV = None, pull_back_pA = None,
                  random_scan_rate = 0.5, correct_drift = False, bottom = True):
@@ -408,7 +394,7 @@ class RealExpEnv:
             STM coordinates in nm
         limit_nm: array_like
             [left, right, up, down] limit in STM coordinates in nm
-            
+
         Return
         ------
         bool

@@ -1,6 +1,5 @@
 import win32com.client
 import os
-import matplotlib.pyplot as plt
 import time
 import numpy as np
 from collections import namedtuple

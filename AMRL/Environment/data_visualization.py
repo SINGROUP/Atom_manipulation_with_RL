@@ -5,6 +5,7 @@ import matplotlib
 import numpy as np
 
 def circle(x, y, r, p = 100):
+
     x_, y_ = [], []
     for i in range(p):
         x_.append(x+r*np.cos(2*i*np.pi/p))
@@ -12,6 +13,17 @@ def circle(x, y, r, p = 100):
     return x_, y_
 
 def plot_graph(reward, precision, alpha, episode_len, avg_rewards, avg_alphas, avg_precisions, avg_episode_lengths):
+    """
+    Plot training progress (reward, precision, alpha, episode length and their mean)
+
+    Parameters
+    ---------
+    reward, precision, alpha, episode_len, avg_rewards, avg_alphas, avg_precisions, avg_episode_lengths: array_like
+
+    Returns
+    -------
+    None : None
+    """
     clear_output(wait=True) 
     _, ((ax, ax1), (ax2, ax3)) = plt.subplots(2, 2, figsize=(12,8))
     ax_plot_graph(reward, avg_rewards, ax, 'Episode reward')
@@ -24,6 +36,19 @@ def plot_graph(reward, precision, alpha, episode_len, avg_rewards, avg_alphas, a
     plt.show()
 
 def ax_plot_graph(data, avg_data, ax, y_label):
+    """
+    Plot data and its rolling mean
+
+    Parameters
+    ---------
+    data, avg_data: array_like
+    ax: axes
+    y_label: str
+
+    Returns
+    -------
+    None : None
+    """
     df = pd.DataFrame({'x': range(len(data)), 'data': data, 'average': avg_data})
     ax.plot(df['x'], df['data'], marker='', color='silver', linewidth=0.8, alpha=0.9)
     ax.plot(df['x'], df['average'], marker='', color='DodgerBlue', linewidth=1, alpha=0.9)
@@ -32,6 +57,21 @@ def ax_plot_graph(data, avg_data, ax, y_label):
     
 
 def show_reset(img_info, atom_start_position, destination_position, template_nm = None, template_wh = None):
+    """
+    Show STM image, atom and target position, and template position at the reset step in reinforcement learning 
+
+    Parameters
+    ---------
+    img_info: dict
+    atom_start_position, destination_position: array_like
+        atom and target position in STM coordinate (nm)
+    template_nm, template_wh: array_like, optional
+        template position and size in nm
+
+    Returns
+    -------
+    None : None
+    """
     img = img_info['img_forward']
     offset_nm = img_info['offset_nm']
     len_nm = img_info['len_nm']
@@ -49,6 +89,23 @@ def show_reset(img_info, atom_start_position, destination_position, template_nm 
 
 def show_done(img_info, atom_position, atom_start_position, destination_position, reward,
               template_nm = None, template_wh = None):
+    """
+    Show STM image, atom start and current position, target position, episode reward, and template position when an episode terminates in reinforcement learning 
+
+    Parameters
+    ---------
+    img_info: dict
+    atom_position,atom_start_position, destination_position: array_like
+        atom start, atom current, and target position in STM coordinate (nm)
+    reward: float
+        episode reward
+    template_nm, template_wh: array_like, optional
+        template position and size in nm
+
+    Returns
+    -------
+    None : None
+    """
     img = img_info['img_forward']
     offset_nm = img_info['offset_nm']
     len_nm = img_info['len_nm']
@@ -68,6 +125,24 @@ def show_done(img_info, atom_position, atom_start_position, destination_position
 
 def show_step(img_info, start_nm, end_nm, atom_position, atom_start_position, destination_position, mvolt, pcurrent,
               template_nm = None, template_wh = None):
+    """
+    Show STM image, atom start and current position, target position, 
+    bias, current setpoint, and template position when the environment take a step in reinforcement learning 
+
+    Parameters
+    ---------
+    img_info: dict
+    atom_position,atom_start_position, destination_position: array_like
+        atom start, atom current, and target position in STM coordinate (nm)
+    mvolt, pcurrent: float
+        bias in mV and current in pA
+    template_nm, template_wh: array_like, optional
+        template position and size in nm
+
+    Returns
+    -------
+    None : None
+    """
     img = img_info['img_forward']
     offset_nm = img_info['offset_nm']
     len_nm = img_info['len_nm']

@@ -4,7 +4,6 @@ import matplotlib
 import numpy as np
 from skimage import morphology, measure
 from scipy.spatial.distance import cdist as cdist
-import pdb
 
 def template_matching(img, template, template_max_y, bottom = True):
     """
