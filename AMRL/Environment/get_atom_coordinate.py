@@ -8,12 +8,21 @@ import pdb
 
 def template_matching(img, template, template_max_y, bottom = True):
     """
-    Arguments:
-        img, template (np.ndarray of unint8): the image and the template image
-        template_max_y (int): the maximum of minimum position to match the template
-        bottom (bool): match template from 0 - template_max_y row if False and match template from template_max_y - img.shape[0] row if True
-    Return:
-        bottom_left, top_right (np.array of int): the bottom left and top right pixel coordinate of template in img 
+    Find the position of the template in image
+
+    Parameters
+    ----------
+    img, template: array_like
+        the image and the template image
+    template_max_y: int
+        the maximum of minimum position to match the template
+    bottom: bool
+        match template from 0 - template_max_y row if False and match template from template_max_y - img.shape[0] row if True
+    
+    Return
+    ------
+    bottom_left, top_right: array_like
+        the bottom left and top right pixel coordinate of template in img 
     """
     
     methods = ['cv2.TM_CCOEFF', 'cv2.TM_CCOEFF_NORMED', 'cv2.TM_CCORR',
@@ -52,11 +61,15 @@ def blob_detection(img):
     """
     Detect atoms with BlobDetector from cv2
 
-    Arguments:
-        img (np.ndarray of unint8): the image
+    Parameters
+    ----------
+    img: array_like
+        the image
 
-    Return:
-        atoms_pixel, atoms_size (np.ndarray): the atom coordinates and sizes in pixel
+    Return
+    ------
+    atoms_pixel, atoms_size: array_like 
+        the atom coordinates and sizes in pixel
          
     """
     ###set BlobDetector params https://learnopencv.com/blob-detection-using-opencv-python-c/
@@ -97,12 +110,17 @@ def atom_detection(img, bottom_left, top_right):
     """
     Detect atoms by combining blob_detection and get_region_centroids outside the template region
     
-    Arguments:
-        img (np.ndarray of unint8): the image
-        bottom_left, top_right (np.array of int): the bottom left and top right pixel coordinates of the template 
+    Parameters
+    ----------
+    img: array_like
+        the image
+    bottom_left, top_right: array_like
+        the bottom left and top right pixel coordinates of the template 
 
-    Return:
-        atoms_pixel(np.ndarray): the atom coordinates in pixel
+    Return
+    ------
+    atoms_pixel: array_like
+        the atom coordinates in pixel
          
     """
     
@@ -120,17 +138,22 @@ def pixel_to_nm(pixel, img, offset_nm, len_nm):
     """
     Convert pixel coordinates to STM coordinates in nm
     
-    Arguments:
-        pixel (np.ndarray of int): pixel coordinates
-        img (np.ndarray): image
-        offset_nm (np.array): XY offset in nm
-        len_nm (np.array): XY length of the image in nm
+    Parameters
+    ----------
+    pixel: array_like 
+        pixel coordinates
+    img: array_like
+        image
+    offset_nm: array_like
+        XY offset in nm
+    len_nm: array_like
+        XY length of the image in nm
 
-    Return:
-        nm (np.ndarray): STM coordinates in nm
-         
+    Return
+    ------
+    nm: array_like 
+        STM coordinates in nm
     """
-    
     nm = pixel*np.array([len_nm[0]/img.shape[0],len_nm[1]/img.shape[1]]) + np.array([offset_nm[0]-len_nm[0]/2, offset_nm[1]])
     return nm
 
@@ -138,19 +161,30 @@ def get_atom_coordinate_nm(img, offset_nm, len_nm, template, template_max_y, bot
     """
     Use template_matching, atom_detection, and pixel_to_nm to get the STM coordinates of atoms in nm
     
-    Arguments:
-        img (np.ndarray): image
-        offset_nm (np.array): XY offset in nm
-        len_nm (np.array): XY length of the image in nm
-        template (np.ndarray of unint8): the template image
-        template_max_y (int): the maximum of minimum position to match the template
-        bottom (bool): match template from 0 - template_max_y row if False and match template from template_max_y - img.shape[0] row if True
+    Parameters
+    ----------
+    img: array_like
+        image
+    offset_nm: array_like
+        XY offset in nm
+    len_nm: array_like
+        XY length of the image in nm
+    template: array_like
+        the template image
+    template_max_y: int
+        the maximum of minimum position to match the template
+    bottom: bool
+        match template from 0 - template_max_y row if False and match template from template_max_y - img.shape[0] row if True
 
-    Return:
-        atom_nm (np.ndarray): STM coordinates of the atoms in nm
-        (atom_nm - bottom_left_nm) (np.ndarray) 
-        bottom_left_nm (np.ndarray): the bottom left STM coordinates of the template in nm 
-        wh (np.ndarray): the width and height of the template in nm
+    Return
+    ------
+    atom_nm: array_like
+        STM coordinates of the atoms in nm
+    (atom_nm - bottom_left_nm): : array_like 
+    bottom_left_nm: array_like
+        the bottom left STM coordinates of the template in nm 
+    wh: array_like
+        the width and height of the template in nm
     """
     if template is not None:
         bottom_left_pixel, top_right_pixel = template_matching(img, template,template_max_y, bottom)
@@ -171,16 +205,25 @@ def get_atom_coordinate_nm_with_anchor(img, offset_nm, len_nm, anchor_nm, obstac
     """
     Get the STM coordinates (nm) of atoms and anchors that are not in the obstacle_list using atom_detection, and pixel_to_nm 
     
-    Arguments:
-        img (np.ndarray): image
-        offset_nm (np.array): XY offset in nm
-        len_nm (np.array): XY length of the image in nm
-        anchor_nm (np.ndarray): the STM coordinates of anchors
-        obstacle_list (np.ndarray): the STM coordinates of obstacles
+    Parameters
+    ----------
+    img: array_like
+        image
+    offset_nm: array_like
+        XY offset in nm
+    len_nm: array_like
+        XY length of the image in nm
+    anchor_nm: array_like
+        the STM coordinates of anchors
+    obstacle_list: array_like
+        the STM coordinates of obstacles
 
-    Return:
-        atom_nm (np.ndarray): STM coordinates of the atoms in nm
-        anchor_nm_ (np.ndarray): STM coordinates of the anchors in nm 
+    Return
+    ------
+    atom_nm: array_like
+        STM coordinates of the atoms in nm
+    anchor_nm_: array_like
+        STM coordinates of the anchors in nm 
     """
     atom_pixel = atom_detection(img, np.array([0,0]), np.array([0,0]))
     atoms_nm = pixel_to_nm(atom_pixel, img, offset_nm, len_nm)
@@ -202,13 +245,19 @@ def get_all_atom_coordinate_nm(img, offset_nm, len_nm):
     """
     Get the STM coordinates (nm) of multiple atoms using atom_detection, and pixel_to_nm 
     
-    Arguments:
-        img (np.ndarray): image
-        offset_nm (np.array): XY offset in nm
-        len_nm (np.array): XY length of the image in nm
+    Parameters
+    ----------
+    img: array_like
+        image
+    offset_nm: array_like
+        XY offset in nm
+    len_nm: array_like
+        XY length of the image in nm
 
-    Return:
-        atom_nm (np.ndarray): STM coordinates of the atoms in nm
+    Return
+    ------
+    atom_nm: array_like
+        STM coordinates of the atoms in nm
     """
     atom_pixel = atom_detection(img, np.array([0,0]), np.array([0,0]))
     atom_nm = pixel_to_nm(atom_pixel, img, offset_nm, len_nm)
