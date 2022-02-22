@@ -1,4 +1,5 @@
 # Atom manipulation with reinforcement learning
+![alt text](https://github.com/adam-p/markdown-here/raw/master/src/common/images/icon48.png "Logo Title Text 1")
 
 This repository contains codes used in the autonomous atom manipulation project. In this project, we use deep reinforcment learning algorithms including soft actor-critic, hindsight experience replay, and emphsize recent experience replay to automatize atom manipulation in the Createc scanning tunneling microscope system. 
 
