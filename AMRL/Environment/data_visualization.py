@@ -162,6 +162,22 @@ def show_step(img_info, start_nm, end_nm, atom_position, atom_start_position, de
     
     
 def plot_large_frame(img_info, atom_chosen, design_chosen, anchor_chosen, next_destination, path):
+    """
+    Used for building multiple atom structures
+    Show STM image, atoms, designs, and anchor, next target, and path between atom and design  
+
+    Parameters
+    ---------
+    img_info: dict
+    atom_chosen, design_chosen, anchor_chosen, next_destination: array_like
+        atom, design, anchor, and next target positions in STM coordinate (nm)
+    path: array_like
+        path between atom and design
+        
+    Returns
+    -------
+    None : None
+    """
     _, ax = plt.subplots()
     img = img_info['img_forward']
     offset_nm = img_info['offset_nm']
