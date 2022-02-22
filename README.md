@@ -1,4 +1,4 @@
-# Atom_manipulation_with_RL
+# Atom manipulation with reinforcement learning
 
 This repository contains codes used in the autonomous atom manipulation project. In this project, we use deep reinforcment learning algorithms including soft actor-critic, hindsight experience replay, and emphsize recent experience replay to automatize atom manipulation in the Createc scanning tunneling microscope system. 
 
@@ -8,14 +8,17 @@ The codes are implemented in python3 and the deep learning algorithms are implem
 ## Usage
 
 ### Training reinforcement learning agent
-
-- single_atom_training.ipynb: collects atom manipulation data and train the deep reinforcement learning agent.
+Run 
+`
+single_atom_training.ipynb
+`.
+The notebook goes through the workflow of setting the hyperparameters, collecting atom manipulation data, and training the deep reinforcement learning agent.
 
 ### Evaluate a RL or baseline atom manipulation agent
-- baseline_evaluation.ipynb: evaluate the performance of a hard-coded atom manipulation routine.
+Run `baseline_evaluation.ipynb`. The notebook can be used to evaluate the performance of a hard-coded atom manipulation routine or a trained RL agent on real-world atom manipulation experiments.
 
 ### Build a multiple-atom structure with a trained RL agent
-- multiple_atoms_building.ipynb: used to build multiple-atom structures. The structure building process is divided into individual atom manipulation episodes through assignment and path planning algorithms.
+Run `multiple_atoms_building.ipynb`. The notebook goes through the process to build multi-atom structures, including defining the design, dividing the building process into individual atom manipulation episodes through assignment and path planning algorithms, and running a trained RL agent.
 
 
 ## Installation
