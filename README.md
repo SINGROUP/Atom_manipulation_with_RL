@@ -10,3 +10,6 @@ The codes are implemented in python3 and the deep learning algorithms are implem
 - single_atom_evaluation.ipynb: evaluate the performance of a deep RL agent. 
 - baseline_evaluation.ipynb: evaluate the performance of a hard-coded atom manipulation routine.
 - multiple_atoms_building.ipynb: used to build multiple-atom structures. The structure building process is divided into individual atom manipulation episodes through assignment and path planning algorithms.
+
+
+## Installation
