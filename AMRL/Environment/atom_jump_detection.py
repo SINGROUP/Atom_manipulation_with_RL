@@ -1,20 +1,20 @@
 import numpy as np
-from matplotlib import pyplot as plt
-import pandas as pd
 from torch.utils.data import Dataset, DataLoader
 import torch
 from torch import nn
-import torch.nn.functional as F
 from torch.optim import Adam
-from sklearn.metrics import confusion_matrix, f1_score
+from sklearn.metrics import confusion_matrix
 
 def cal_accuracy(y_true, y_pred):
     """
-    Arguments:
-        y_true, y_pred (np.array)
+    Parameters
+    ----------
+    y_true, y_pred: array_like
         
-    Return:
-        accuracy of y_pred (float)
+    Return
+    ------
+    float
+        accuracy of y_pred
     """
     return (y_true == y_pred).sum()/ (y_true.shape[0])
 
