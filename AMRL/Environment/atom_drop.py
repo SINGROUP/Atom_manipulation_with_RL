@@ -1,7 +1,7 @@
-from Environment.createc_control import Createc_Controller
+from .createc_control import Createc_Controller
 import numpy as np
-from Environment.get_atom_coordinate import get_all_atom_coordinate_nm
-from Environment.data_visualization import plot_atoms_and_design
+from .get_atom_coordinate import get_all_atom_coordinate_nm
+from .data_visualization import plot_atoms_and_design
 
 class AtomDrop:
     def __init__(self, pixel, scan_mV, speed = None):
@@ -25,7 +25,7 @@ class AtomDrop:
             self.all_atom_absolute_nm_b = np.array(sorted(self.all_atom_absolute_nm_b, key = lambda x: (x[0], x[1])))
 
             self.all_atom_absolute_nm = 0.5*(self.all_atom_absolute_nm_f+self.all_atom_absolute_nm_b)
-            
+
             if len(self.all_atom_absolute_nm_b)!=len(self.all_atom_absolute_nm_f):
                 print('length of list of atoms found in b and f different')
         except:
@@ -60,7 +60,5 @@ class AtomDrop:
     def pull_test(self):
         return pull_success
 
-    
+
     def single_test_drop(self, z_approach, position):'''
-
-

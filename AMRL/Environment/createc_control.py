@@ -26,12 +26,12 @@ class Createc_Controller:
             scan pixel
         scan_mV: float
             scan bias in mV
-        
+
         Returns
         -------
         None : None
         """
-        
+
         if im_size_nm is not None:
             self.im_size_nm = im_size_nm
         if offset_nm is not None:
@@ -43,11 +43,11 @@ class Createc_Controller:
         self.stm=win32com.client.Dispatch("pstmafm.stmafmrem")
         if self.stm.stmready()==1:
             print('succeed to connect')
-        else: 
+        else:
             self.stm = win32com.client.DispatchEx("pstmafm.stmafmrem")
             if self.stm.stmready()==1:
                 print('succeed to connect with DispatchEx')
-                
+
     def scan_image(self, DIR_NAME = None, BASE_NAME = None, counter = None, save = False, speed = None):
         """
         Take a STM scan in Createc
@@ -61,7 +61,7 @@ class Createc_Controller:
             image directory, name
         counter: int, optional
             image number
-            
+
         Return
         ------
         image: array_like
@@ -92,7 +92,7 @@ class Createc_Controller:
             time.sleep(2)
             scanstatus = self.stm.scanstatus
             if scanstatus!=2:
-                break  
+                break
         if save:
             if DIR_NAME and BASE_NAME and counter:
                 path = os.path.join(DIR_NAME, BASE_NAME + str(counter))
@@ -106,7 +106,7 @@ class Createc_Controller:
         x_length = 0.1*float(self.stm.getparam('Length x[A]'))
         y_length = 0.1*float(self.stm.getparam('Length y[A]'))
         return img_forward, img_backward, self.offset_nm, np.array([x_length, y_length])
-    
+
     def lat_manipulation(self,x_start_nm, y_start_nm, x_end_nm, y_end_nm, mvoltage, pcurrent, offset_nm, len_nm):
         """
         Execute lateral manipulation in Createc
@@ -119,7 +119,7 @@ class Createc_Controller:
         ------
         namedtuple (['time','x','y','current','dI_dV','topography'])
         """
-        
+
         x_start_pixel, y_start_pixel, x_end_pixel, y_end_pixel = self.nm_to_pixel(x_start_nm, y_start_nm, x_end_nm, y_end_nm, offset_nm, len_nm)
 
         print(x_start_pixel, y_start_pixel, x_end_pixel, y_end_pixel)
@@ -141,7 +141,7 @@ class Createc_Controller:
             return data
         else:
             return None
-    
+
     def get_Delta_X(self, im_size_nm):
         """
         Get the DeltaX value for a given image size
@@ -163,7 +163,7 @@ class Createc_Controller:
         Nx = float(self.stm.getparam('Num.X'))
         Delta_X = im_size_nm*10/(Nx*volt_unit*GainX*Xpiezoconst/DAC_unit)
         return int(Delta_X)
-    
+
     def get_scan_time(self):
         """
         Estimate scan time
@@ -175,7 +175,7 @@ class Createc_Controller:
         scan_time = float(self.stm.getparam('Sec/Image:'))
         scan_time = scan_time / 2 * (1 + 1 / float(self.stm.getparam('Delay Y')))
         return scan_time
-    
+
     def nm_to_pixel(self,x_start_nm, y_start_nm, x_end_nm, y_end_nm, offset_nm, len_nm):
         """
         Convert values from STM coordinates (nm) to pixel coordinates
@@ -217,9 +217,9 @@ class Createc_Controller:
             y_end_pixel = int(np.rint(y_end_pixel))
         else:
             y_end_pixel = None
-        
+
         return x_start_pixel, y_start_pixel, x_end_pixel, y_end_pixel
-    
+
     def set_xy_nm(self, nm):
         """
         set xy offset value in nm
@@ -236,7 +236,7 @@ class Createc_Controller:
         Xpiezoconst = float(self.stm.getparam("Xpiezoconst"))
         Ypiezoconst = float(self.stm.getparam("Ypiezoconst"))
         self.stm.setxyoffvolt(10*nm[0]/Xpiezoconst,10*nm[1]/Ypiezoconst)
-        
+
     def get_xy_nm(self):
         """
         get xy offset value in nm
@@ -255,7 +255,7 @@ class Createc_Controller:
         x_nm = -0.1*Xpiezoconst*volt_unit*float(self.stm.getparam('OffsetX'))*Xgain/DAC_unit
         y_nm = -0.1*Ypiezoconst*volt_unit*float(self.stm.getparam('OffsetY'))*Ygain/DAC_unit
         return np.array([x_nm, y_nm])
-    
+
     def _ramp_bias_same_pole(self, _end_bias_mV: float, _init_bias_mV: float, _speed: float):
         """
         To be called by ramp_bias_mV().
@@ -328,7 +328,7 @@ class Createc_Controller:
         ----------
         speed: float
             speed in A/s
-        
+
         Returns
         -------
         None : None
@@ -384,7 +384,7 @@ class Createc_Controller:
         x_nm, y_nm: float
             STM coordinates (nm)
         """
-        offset_nm = self.get_offset_nm() 
+        offset_nm = self.get_offset_nm()
         len_nm = self.get_len_nm()
         #print('offset nm:',offset_nm,'len nm:',len_nm)
         self.set_Z_approach(A)
@@ -429,12 +429,3 @@ class Createc_Controller:
         Delta_X = float(self.stm.getparam('Delta X [Dac]'))
         len_nm = Delta_X*Nx*volt_unit*GainX*Xpiezoconst/(10*DAC_unit)
         return len_nm
-
-
-
-
-
-                    
-        
-                
-
