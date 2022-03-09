@@ -137,7 +137,7 @@ class Structure_Builder(RealExpEnv):
             self.speed = speed
         if precision_lim is not None:
             self.precision_lim = precision_lim
-        
+
     def reset_large(self, design_nm,
                     align_design_mode = 'auto', align_design_params = {'atom_nm':None, 'design_nm':None}, sequence_mode = 'design',
                     left = None, right = None, top = None, bottom = None):
@@ -211,10 +211,10 @@ class Structure_Builder(RealExpEnv):
     def get_the_returns(self):
         """
         Get and set the parameters needed for defining a RL episode:
-        offset_nm, len_nm, 
+        offset_nm, len_nm,
         self.atom_chosen, self.design_chosen, self.obstacle_list,
         self.anchor_chosen,
-        self.next_destinatio_nm, self.paths 
+        self.next_destinatio_nm, self.paths
 
         Parameters
         ----------
@@ -226,9 +226,9 @@ class Structure_Builder(RealExpEnv):
                 offset value to use for the STM scan
 
         len_nm: float
-                image size for the STM scan 
+                image size for the STM scan
         """
-        
+
         for i in range(self.atoms.shape[0]):
             self.atom_chosen, self.design_chosen, self.obstacle_list = self.match_atoms_designs(i, mode = self.sequence_mode)
             if self.outside_obstacles is not None:
@@ -254,7 +254,7 @@ class Structure_Builder(RealExpEnv):
                 offset value to use for the STM scan
 
         len_nm: float
-                image size for the STM scan 
+                image size for the STM scan
         """
         left = np.min([self.anchor_chosen[0], self.atom_chosen[0],self.next_destinatio_nm[0]])-1.5
         right = np.max([self.anchor_chosen[0], self.atom_chosen[0],self.next_destinatio_nm[0]])+1.5
@@ -290,7 +290,7 @@ class Structure_Builder(RealExpEnv):
 
         Returns
         -------
-        None: None 
+        None: None
         """
         i = np.argmin(cdist(self.all_atom_absolute_nm, new_atom_position.reshape((-1,2))))
         new_atom_position = self.all_atom_absolute_nm[i,:]
@@ -300,8 +300,8 @@ class Structure_Builder(RealExpEnv):
 
     def match_atoms_designs(self, i = 0, mode = 'design'):
         """
-        Assign atoms to designs and choose the next atom to manipulate. 
-        If mode = 'design', choose the atom-design pair with the ith largest distance. 
+        Assign atoms to designs and choose the next atom to manipulate.
+        If mode = 'design', choose the atom-design pair with the ith largest distance.
         If mode = 'anchor', choose the atom-design pair with ith shortest atom-anchor distance
 
         Parameters
@@ -312,7 +312,7 @@ class Structure_Builder(RealExpEnv):
 
         Returns
         -------
-        atom_chosen, design_chosen: array_like 
+        atom_chosen, design_chosen: array_like
                 the chosen atom and design positions
         obstacle_list: list
                 list of obstacle positions. It will be used in the pathplanning algorithm
@@ -343,7 +343,7 @@ class Structure_Builder(RealExpEnv):
 
         Returns
         -------
-        next_target, : array_like 
+        next_target, : array_like
                 next target position
         min_path: list
                 list of steps in the planned path
@@ -390,7 +390,7 @@ class Structure_Builder(RealExpEnv):
 
         Returns
         -------
-        self.state: array_like 
+        self.state: array_like
         done: bool
         info: dict
         """
@@ -418,7 +418,7 @@ class Structure_Builder(RealExpEnv):
         self.state = np.concatenate((self.goal, (self.atom_absolute_nm - self.atom_start_absolute_nm)/self.goal_nm))
         done = self.dist_destination<self.stop_lim
         return self.state, done, info
-    
+
     def step(self, action):
         """
         Take a step in the environment with the given action
@@ -450,7 +450,7 @@ class Structure_Builder(RealExpEnv):
 
         next_state = np.concatenate((self.goal, (self.atom_absolute_nm -self.atom_start_absolute_nm)/self.goal_nm))
         info |= {'atom_absolute_nm':self.atom_absolute_nm, 'atom_absolute_nm_f' : self.atom_absolute_nm_f, 'atom_absolute_nm_b' : self.atom_absolute_nm_b, 'img_info' : self.img_info}
-        
+
         return next_state, None, done, info
 
     def scan_atom(self, anchor_nm = None, offset_nm = None, len_nm = None):
@@ -469,20 +469,20 @@ class Structure_Builder(RealExpEnv):
         Return
         ------
         self.atom_absolute_nm: array_like
-                atom position in STM coordinates (nm) 
+                atom position in STM coordinates (nm)
         self.atom_relative_nm: array_like
                 atom position relative to the template position in STM coordinates (nm)
         """
         if offset_nm is not None:
-            self.offset_nm = offset_nm 
+            self.offset_nm = offset_nm
         if len_nm is not None:
-            self.len_nm = len_nm 
+            self.len_nm = len_nm
         if anchor_nm is not None:
-            self.anchor_nm = anchor_nm 
+            self.anchor_nm = anchor_nm
 
         self.createc_controller.offset_nm = self.offset_nm
         self.createc_controller.im_size_nm = self.len_nm
-        
+
         img_forward, img_backward, offset_nm, len_nm = self.createc_controller.scan_image(speed= self.speed)
         if self.use_anchor:
             self.atom_absolute_nm_f, self.anchor_nm_f = get_atom_coordinate_nm_with_anchor(img_forward, offset_nm, len_nm, self.anchor_nm, self.obstacle_list)
@@ -513,7 +513,7 @@ class Structure_Builder(RealExpEnv):
         Return
         ------
         self.atom_absolute_nm: array_like
-                atom position in STM coordinates (nm) 
+                atom position in STM coordinates (nm)
         self.atom_relative_nm: array_like
                 atom position relative to the template position in STM coordinates (nm)
         """
@@ -556,17 +556,17 @@ class Structure_Builder(RealExpEnv):
         Parameters
         ----------
         atom_absolute_nm: array_like
-                atom position in STM coordinates (nm) 
-    
+                atom position in STM coordinates (nm)
+
         destination_absolute_nm: array_like
                 final target position in nm
 
         Return
-        ------ 
+        ------
         destination_absolute_nm: array_like
-                target position in STM coordinates (nm) 
+                target position in STM coordinates (nm)
         dr/self.goal_nm: array_like
-                target position relative to the initial atom position in STM coordinates (nm) 
+                target position relative to the initial atom position in STM coordinates (nm)
         """
         angle = np.arctan2((destination_absolute_nm-atom_start_absolute_nm)[1],(destination_absolute_nm-atom_start_absolute_nm)[0])
         goal_nm = min(self.goal_nm, np.linalg.norm(destination_absolute_nm-atom_start_absolute_nm))
@@ -585,14 +585,14 @@ class Structure_Builder(RealExpEnv):
         mvolt: float
                 bias in mV
         pcurrent: float
-                current setpoint in pA 
+                current setpoint in pA
 
         Return
         ------
         current: array_like
                 manipulation current trace
         d: float
-                tip movement distance 
+                tip movement distance
         """
         x_start_nm+=self.atom_absolute_nm[0]
         x_end_nm+=self.atom_absolute_nm[0]

@@ -1,8 +1,8 @@
-from Environment.createc_control import Createc_Controller
+from .createc_control import Createc_Controller
 import numpy as np
-from Environment.get_atom_coordinate import get_atom_coordinate_nm
+from .get_atom_coordinate import get_atom_coordinate_nm
 import findiff
-from Environment.atom_jump_detection import AtomJumpDetector_conv
+from .atom_jump_detection import AtomJumpDetector_conv
 
 class RealExpEnv:
     """
@@ -11,7 +11,7 @@ class RealExpEnv:
     def __init__(self, step_nm, max_mvolt, max_pcurrent_to_mvolt_ratio, goal_nm, template, current_jump, im_size_nm, offset_nm,
                  manip_limit_nm, pixel, template_max_y, scan_mV, max_len, load_weight, pull_back_mV = None, pull_back_pA = None,
                  random_scan_rate = 0.5, correct_drift = False, bottom = True):
-        
+
         self.step_nm = step_nm
         self.max_mvolt = max_mvolt
         self.max_pcurrent_to_mvolt_ratio = max_pcurrent_to_mvolt_ratio
@@ -62,7 +62,7 @@ class RealExpEnv:
 
         Returns
         -------
-        self.state: array_like 
+        self.state: array_like
         info: dict
         """
         self.len = 0
@@ -86,15 +86,15 @@ class RealExpEnv:
         print('goal_nm:',goal_nm)
         self.atom_start_absolute_nm, self.atom_start_relative_nm = self.atom_absolute_nm, self.atom_relative_nm
         self.destination_relative_nm, self.destination_absolute_nm, self.goal = self.get_destination(self.atom_start_relative_nm, self.atom_start_absolute_nm, goal_nm)
-        
+
         self.state = np.concatenate((self.goal, (self.atom_absolute_nm - self.atom_start_absolute_nm)/self.goal_nm))
         self.dist_destination = goal_nm
 
-        info = {'start_absolute_nm':self.atom_start_absolute_nm, 'start_relative_nm':self.atom_start_relative_nm, 'goal_absolute_nm':self.destination_absolute_nm, 
-                'goal_relative_nm':self.destination_relative_nm, 'start_absolute_nm_f':self.atom_absolute_nm_f, 'start_absolute_nm_b':self.atom_absolute_nm_b, 
+        info = {'start_absolute_nm':self.atom_start_absolute_nm, 'start_relative_nm':self.atom_start_relative_nm, 'goal_absolute_nm':self.destination_absolute_nm,
+                'goal_relative_nm':self.destination_relative_nm, 'start_absolute_nm_f':self.atom_absolute_nm_f, 'start_absolute_nm_b':self.atom_absolute_nm_b,
                 'start_relative_nm_f':self.atom_relative_nm_f, 'start_relative_nm_b':self.atom_relative_nm_b}
         return self.state, info
-    
+
     def step(self, action):
         """
         Take a step in the environment with the given action
@@ -118,7 +118,7 @@ class RealExpEnv:
         done = self.len == self.max_len
         if not done:
             jump = self.detect_current_jump(current_series)
-            
+
         if done or jump:
             self.dist_destination, dist_start, dist_last = self.check_similarity()
             print('atom moves by: {:.3f} nm'.format(dist_start))
@@ -170,7 +170,7 @@ class RealExpEnv:
         #print('old potential:', old_potential, 'new potential:', new_potential)
         reward = self.default_reward_done*(dist<self.precision_lim) + self.default_reward*(dist>self.precision_lim) + new_potential - old_potential
         return reward
-    
+
     def scan_atom(self):
         """
         Take a STM scan and extract the atom position
@@ -178,7 +178,7 @@ class RealExpEnv:
         Return
         ------
         self.atom_absolute_nm: array_like
-                atom position in STM coordinates (nm) 
+                atom position in STM coordinates (nm)
         self.atom_relative_nm: array_like
                 atom position relative to the template position in STM coordinates (nm)
         """
@@ -192,7 +192,7 @@ class RealExpEnv:
         self.atom_relative_nm_b = atom_relative_nm_b
 
         self.atom_absolute_nm, self.atom_relative_nm, template_nm, self.template_wh = 0.5*(atom_absolute_nm_f+atom_absolute_nm_b), 0.5*(atom_relative_nm_f+atom_relative_nm_b), 0.5*(template_nm_f+template_nm_b), 0.5*(template_wh_b+template_wh_f)
-        
+
         if self.out_of_range(self.atom_absolute_nm, self.manip_limit_nm):
             print('Warning: atom is out of limit')
         if self.correct_drift:
@@ -211,7 +211,7 @@ class RealExpEnv:
                 self.template_nm = template_nm
         self.template_nm = template_nm
         return self.atom_absolute_nm, self.atom_relative_nm
-    
+
     def get_destination(self, atom_relative_nm, atom_absolute_nm, goal_nm):
         """
         Uniformly sample a new target that is within the self.inner_limit_nm
@@ -219,7 +219,7 @@ class RealExpEnv:
         Parameters
         ----------
         atom_absolute_nm: array_like
-                atom position in STM coordinates (nm) 
+                atom position in STM coordinates (nm)
         atom_relative_nm: array_like
                 atom position relative to the template position in STM coordinates (nm)
         goal_nm: array_like
@@ -228,11 +228,11 @@ class RealExpEnv:
         Return
         ------
         destination_relative_nm: array_like
-                target position relative to the template position in STM coordinates (nm) 
+                target position relative to the template position in STM coordinates (nm)
         destination_absolute_nm: array_like
-                target position in STM coordinates (nm) 
+                target position in STM coordinates (nm)
         dr/self.goal_nm: array_like
-                target position relative to the initial atom position in STM coordinates (nm) 
+                target position relative to the initial atom position in STM coordinates (nm)
         """
         while True:
             r = np.random.random()
@@ -243,14 +243,14 @@ class RealExpEnv:
                 break
         destination_relative_nm = atom_relative_nm + dr
         return destination_relative_nm, destination_absolute_nm, dr/self.goal_nm
-        
+
     def action_to_latman_input(self, action):
         """
         Convert action to lateral manipulation parameter input to Createc
 
         Parameters
         ----------
-            action: array_like 
+            action: array_like
 
         Return
         ------
@@ -261,7 +261,7 @@ class RealExpEnv:
         pcurrent: float
                 current setpoint in pA
         """
-        
+
         x_start_nm = action[0]*self.step_nm
         y_start_nm = action[1]*self.step_nm
         x_end_nm = action[2]*self.goal_nm
@@ -281,14 +281,14 @@ class RealExpEnv:
         mvolt: float
                 bias in mV
         pcurrent: float
-                current setpoint in pA 
+                current setpoint in pA
 
         Return
         ------
         current: array_like
                 manipulation current trace
         d: float
-                tip movement distance 
+                tip movement distance
         """
         x_start_nm+=self.atom_absolute_nm[0]
         x_end_nm+=self.atom_absolute_nm[0]
@@ -367,7 +367,7 @@ class RealExpEnv:
         else:
             print('CNN and old prediction both say no movement')
             return False
-        
+
     def check_similarity(self):
         """
         Take a STM scan and calculate the distance between the atom and the target, the start position, the previous position
@@ -383,7 +383,7 @@ class RealExpEnv:
         dist_start = np.linalg.norm(self.atom_absolute_nm - self.atom_start_absolute_nm)
         dist_last = np.linalg.norm(self.atom_absolute_nm - old_atom_absolute_nm)
         return dist_destination, dist_start, dist_last
-    
+
     def out_of_range(self, nm, limit_nm):
         """
         Check if the coordinates nm is outside of the limit_nm
@@ -414,15 +414,3 @@ class RealExpEnv:
                                                  np.mean(self.manip_limit_nm[:2])+2*np.random.random()-1,
                                                  np.mean(self.manip_limit_nm[2:])+2*np.random.random()-1,
                                                  mV, current, self.offset_nm, self.len_nm)
-
-        
-
-
-
-
-
-
-
-
-    
-    
