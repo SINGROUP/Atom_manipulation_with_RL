@@ -23,4 +23,4 @@ Run `multiple_atoms_building.ipynb`. The notebook goes through the process to bu
 
 
 ## Installation
-Use `pip install AMRL`.
+Use `pip install git+https://github.com/<owner_name>/<repo_name>.git`.
