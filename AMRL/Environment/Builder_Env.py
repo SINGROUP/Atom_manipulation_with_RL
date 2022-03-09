@@ -1,7 +1,7 @@
-from Environment.Env_new import RealExpEnv
-from Environment.get_atom_coordinate import get_all_atom_coordinate_nm, get_atom_coordinate_nm_with_anchor
-from Environment.rrt import RRT
-from Environment.data_visualization import plot_atoms_and_design
+from .Env_new import RealExpEnv
+from .get_atom_coordinate import get_all_atom_coordinate_nm, get_atom_coordinate_nm_with_anchor
+from .rrt import RRT
+from .data_visualization import plot_atoms_and_design
 
 from scipy.spatial.distance import cdist as cdist
 import numpy as np
@@ -159,17 +159,41 @@ class Structure_Builder(RealExpEnv):
             else:
                 self.outside_obstacles = None
         self.init_anchor = anchor
-
         plot_atoms_and_design(self.large_img_info, self.atoms,self.designs, self.init_anchor)
         self.design_nm = np.concatenate((self.designs, anchor.reshape((-1,2))))
         self.large_img_info |= {'design': self.design_nm}
-
         self.anchors = [self.init_anchor]
-
         offset_nm, len_nm = self.get_the_returns()
         return self.atom_chosen, self.design_chosen, self.next_destinatio_nm, self.paths, self.anchor_chosen, offset_nm, len_nm
 
     def step_large(self, succeed, new_atom_position):
+        """
+        Take a large STM scan and update the atoms and designs after a RL episode  
+
+        Parameters
+        ----------
+        succeed: bool
+                if the RL episode was successful
+        
+        new_atom_position: array_like
+                the new position of the manipulated atom
+
+        Returns
+        -------
+        self.atom_chosen, self.design_chosen, self.next_destinatio_nm, self.anchor_chosen: array_like
+                the positions of the atom, design, target, and anchor to be used in the RL episode 
+        
+        self.paths: array_like
+                the planned path between atom and design
+        
+        offset_nm: array_like
+                offset value to use for the STM scan
+
+        len_nm: float
+                image size for the STM scan 
+        
+        done:bool 
+        """
         self.all_atom_absolute_nm = self.scan_all_atoms(self.large_offset_nm, self.large_len_nm)
         self.large_img_info |= {'design': self.design_nm}
         self.atoms, new_anchor = get_atom_and_anchor(self.all_atom_absolute_nm, np.vstack(self.anchors))
