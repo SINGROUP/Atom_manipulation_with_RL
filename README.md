@@ -23,4 +23,4 @@ Run `multiple_atoms_building.ipynb`. The notebook goes through the process to bu
 
 
 ## Installation
-Use `pip install git+https://github.com/ccakarolotw/Atom_manipulation_with_RL_new.git`.
+Use `pip install git+https://github.com/SINGROUP/Atom_manipulation_with_RL.git`.
