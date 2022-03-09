@@ -11,3 +11,5 @@ gym
 findiff
 scikit-image
 scikit-learn
+pytest
+
