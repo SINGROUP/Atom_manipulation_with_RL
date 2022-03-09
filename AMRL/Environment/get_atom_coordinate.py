@@ -1,6 +1,5 @@
 import cv2
 from matplotlib import pyplot as plt
-import matplotlib
 import numpy as np
 from skimage import morphology, measure
 from scipy.spatial.distance import cdist as cdist

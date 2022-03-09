@@ -1,0 +1,13 @@
+jupyterlab
+matplotlib
+scipy
+pandas
+opencv-python
+--find-links https://download.pytorch.org/whl/torch_stable.html
+torch==1.10.0+cu102
+torchaudio==0.10.0+cu102
+torchvision==0.11.1+cu102
+gym
+findiff
+scikit-image
+scikit-learn
