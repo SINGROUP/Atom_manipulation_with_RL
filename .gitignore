@@ -1,4 +1,6 @@
-__pycache__/
+*__pycache__/
 Untitled.ipynb
 .ipynb_checkpoints/
 build/
+*.egg-info/
+*.py[cod]
