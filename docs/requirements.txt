@@ -1,12 +1,3 @@
-jupyterlab
-matplotlib
-scipy
-pandas
-opencv-python
-torch
-torchvision
-gym
-findiff
-scikit-image
-scikit-learn
-pytest
+sphinx
+sphinx_rtd_theme
+AMRL
