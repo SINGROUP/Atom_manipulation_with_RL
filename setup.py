@@ -8,6 +8,7 @@ setup(
     name='AMRL',
     version='0.0.0',
     packages=setuptools.find_packages(),
+    url="https://atom-manipulation-with-rl.readthedocs.io/en/latest/",
     install_requires=requirements,
     classifiers=[
         "Programming Language :: Python :: 3",
