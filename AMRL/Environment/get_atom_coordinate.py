@@ -4,25 +4,33 @@ import numpy as np
 from skimage import morphology, measure
 from scipy.spatial.distance import cdist as cdist
 
-def template_matching(img, template, template_max_y, bottom = True):
-    """
-    Find the position of the template in image
+def template_matching(img: np.array,
+                      template: np.array,
+                      template_max_y: float,
+                      bottom: bool = True) -> tuple:
+    """Find the position of the template in image
 
     Parameters
     ----------
+
     img, template: array_like
         the image and the template image
+
     template_max_y: int
         the maximum of minimum position to match the template
+
     bottom: bool
-        match template from 0 - template_max_y row if False and match template from template_max_y - img.shape[0] row if True
-    
-    Return
-    ------
+        match template from 0 - template_max_y row if False,
+        match template from template_max_y - img.shape[0] row if True
+
+    Returns
+    -------
+
     bottom_left, top_right: array_like
-        the bottom left and top right pixel coordinate of template in img 
+        the bottom left and top right pixel coordinate of template in img
+
     """
-    
+
     methods = ['cv2.TM_CCOEFF', 'cv2.TM_CCOEFF_NORMED', 'cv2.TM_CCORR',
             'cv2.TM_CCORR_NORMED', 'cv2.TM_SQDIFF', 'cv2.TM_SQDIFF_NORMED']
     h, w = template.shape
@@ -39,7 +47,7 @@ def template_matching(img, template, template_max_y, bottom = True):
         res = cv2.matchTemplate(img[template_max_y:,:],template,method)
     else:
         res = cv2.matchTemplate(img[:template_max_y,:],template,method)
-        
+
     min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)
     if method in [cv2.TM_SQDIFF, cv2.TM_SQDIFF_NORMED]:
         bottom_left = min_loc
@@ -55,20 +63,21 @@ def template_matching(img, template, template_max_y, bottom = True):
     plt.show()'''
     return np.array(bottom_left), np.array(top_right)
 
-def blob_detection(img):
-    """
-    Detect atoms with BlobDetector from cv2
+def blob_detection(img: np.array) -> tuple:
+    """Detect atoms with BlobDetector from cv2
 
     Parameters
     ----------
+
     img: array_like
         the image
 
     Return
     ------
-    atoms_pixel, atoms_size: array_like 
+
+    atoms_pixel, atoms_size: array_like
         the atom coordinates and sizes in pixel
-         
+
     """
     ###set BlobDetector params https://learnopencv.com/blob-detection-using-opencv-python-c/
     img = np.array(img)
@@ -104,24 +113,28 @@ def blob_detection(img):
     atoms_size = np.array(atoms_size)
     return atoms_pixel, atoms_size
 
-def atom_detection(img, bottom_left, top_right):
-    """
-    Detect atoms by combining blob_detection and get_region_centroids outside the template region
-    
+def atom_detection(img: np.array,
+                   bottom_left: np.array,
+                   top_right: np.array) -> tuple:
+    """Detect atoms by combining blob_detection and get_region_centroids outside the template region
+
     Parameters
     ----------
-    img: array_like
-        the image
-    bottom_left, top_right: array_like
-        the bottom left and top right pixel coordinates of the template 
 
-    Return
-    ------
-    atoms_pixel: array_like
+    img : array_like
+        the image
+
+    bottom_left, top_right : array_like
+        the bottom left and top right pixel coordinates of the template
+
+    Returns
+    -------
+
+    atoms_pixel : array_like
         the atom coordinates in pixel
-         
+
     """
-    
+
     atom_pixel, atom_size = blob_detection(img)
     max_pos = get_region_centroids(img)
     s = np.any(cdist(atom_pixel, max_pos)<1*atom_size.reshape(atom_size.shape[0],1),axis = 1)
@@ -129,63 +142,91 @@ def atom_detection(img, bottom_left, top_right):
     #if len(s)!=len(atom_pixel) or len(s)!=max_pos:
     #    s = np.any(cdist(atom_pixel, max_pos)<1*atom_size.reshape(atom_size.shape[0],1),axis = 1)
     atom_pixel = atom_pixel[s,:]
-    atom_pixel = atom_pixel[np.any((atom_pixel-bottom_left)*(atom_pixel - top_right)>0, axis=-1)]
+    filter = np.any((atom_pixel-bottom_left)*(atom_pixel - top_right)>0, axis=-1)
+    atom_pixel = atom_pixel[filter]
     return atom_pixel
 
-def pixel_to_nm(pixel, img, offset_nm, len_nm):
-    """
-    Convert pixel coordinates to STM coordinates in nm
-    
+def pixel_to_nm(pixel: np.array,
+                img: np.array,
+                offset_nm: np.array,
+                len_nm: np.array) -> np.array:
+    """Convert pixel coordinates to STM coordinates in nm
+
     Parameters
     ----------
-    pixel: array_like 
+
+    pixel : array_like
         pixel coordinates
-    img: array_like
+
+    img : array_like
         image
-    offset_nm: array_like
+
+    offset_nm : array_like
         XY offset in nm
-    len_nm: array_like
+
+    len_nm : array_like
         XY length of the image in nm
 
-    Return
-    ------
-    nm: array_like 
+    Returns
+    -------
+
+    nm : array_like
         STM coordinates in nm
     """
-    nm = pixel*np.array([len_nm[0]/img.shape[0],len_nm[1]/img.shape[1]]) + np.array([offset_nm[0]-len_nm[0]/2, offset_nm[1]])
+    offsets = np.array([offset_nm[0]-len_nm[0]/2, offset_nm[1]])
+    nm_per_pixel = np.array([len_nm[0]/img.shape[0],len_nm[1]/img.shape[1]])
+    nm = pixel*nm_per_pixel + offsets
     return nm
 
-def get_atom_coordinate_nm(img, offset_nm, len_nm, template, template_max_y, bottom=True):
-    """
-    Use template_matching, atom_detection, and pixel_to_nm to get the STM coordinates of atoms in nm
-    
+def get_atom_coordinate_nm(img: np.array,
+                           offset_nm: np.array,
+                           len_nm: np.array,
+                           template: np.array,
+                           template_max_y: np.array,
+                           bottom: bool = True) -> tuple:
+    """Use template_matching, atom_detection, and pixel_to_nm
+    to get the STM coordinates of atoms in nm
+
     Parameters
     ----------
+
     img: array_like
         image
+
     offset_nm: array_like
         XY offset in nm
+
     len_nm: array_like
         XY length of the image in nm
+
     template: array_like
         the template image
+
     template_max_y: int
         the maximum of minimum position to match the template
-    bottom: bool
-        match template from 0 - template_max_y row if False and match template from template_max_y - img.shape[0] row if True
 
-    Return
-    ------
-    atom_nm: array_like
+    bottom: bool
+        match template from 0 - template_max_y row if False
+        match template from template_max_y - img.shape[0] row if True
+
+    Returns
+    -------
+
+    atom_nm : array_like
         STM coordinates of the atoms in nm
-    (atom_nm - bottom_left_nm): : array_like 
-    bottom_left_nm: array_like
-        the bottom left STM coordinates of the template in nm 
-    wh: array_like
+
+    (atom_nm - bottom_left_nm) : array_like
+
+    bottom_left_nm : array_like
+        the bottom left STM coordinates of the template in nm
+
+    wh : array_like
         the width and height of the template in nm
+
     """
     if template is not None:
-        bottom_left_pixel, top_right_pixel = template_matching(img, template,template_max_y, bottom)
+        args = img, template,template_max_y, bottom
+        bottom_left_pixel, top_right_pixel = template_matching(*args)
         atom_pixel = atom_detection(img, bottom_left_pixel, top_right_pixel)
         bottom_left_nm = pixel_to_nm(bottom_left_pixel, img, offset_nm, len_nm)
         top_right_nm = pixel_to_nm(top_right_pixel, img, offset_nm, len_nm)
@@ -199,29 +240,40 @@ def get_atom_coordinate_nm(img, offset_nm, len_nm, template, template_max_y, bot
         atom_nm = atom_nm[np.argmin(dist),:]
     return atom_nm, (atom_nm - bottom_left_nm), bottom_left_nm, wh
 
-def get_atom_coordinate_nm_with_anchor(img, offset_nm, len_nm, anchor_nm, obstacle_list = None):
-    """
-    Get the STM coordinates (nm) of atoms and anchors that are not in the obstacle_list using atom_detection, and pixel_to_nm 
-    
+def get_atom_coordinate_nm_with_anchor(img: np.array,
+                                       offset_nm: np.array,
+                                       len_nm: np.array,
+                                       anchor_nm: np.array,
+                                       obstacle_list: bool = None) -> tuple:
+    """Get STM coordinates (nm) of atoms and anchors that are not in the obstacle_list using atom_detection, and pixel_to_nm
+
     Parameters
     ----------
+
     img: array_like
         image
+
     offset_nm: array_like
         XY offset in nm
+
     len_nm: array_like
         XY length of the image in nm
+
     anchor_nm: array_like
         the STM coordinates of anchors
+
     obstacle_list: array_like
         the STM coordinates of obstacles
 
     Return
     ------
+
     atom_nm: array_like
         STM coordinates of the atoms in nm
+
     anchor_nm_: array_like
-        STM coordinates of the anchors in nm 
+        STM coordinates of the anchors in nm
+
     """
     atom_pixel = atom_detection(img, np.array([0,0]), np.array([0,0]))
     atoms_nm = pixel_to_nm(atom_pixel, img, offset_nm, len_nm)
@@ -238,43 +290,89 @@ def get_atom_coordinate_nm_with_anchor(img, offset_nm, len_nm, anchor_nm, obstac
         dist = cdist(atoms_nm.reshape((-1,2)), center.reshape((-1,2)))
         atom_nm = atoms_nm[np.argmin(dist),:]
     return atom_nm, anchor_nm_
-    
-def get_all_atom_coordinate_nm(img, offset_nm, len_nm):
-    """
-    Get the STM coordinates (nm) of multiple atoms using atom_detection, and pixel_to_nm 
-    
+
+def get_all_atom_coordinate_nm(img: np.array,
+                               offset_nm: np.array,
+                               len_nm: np.array) -> np.array:
+    """Get STM coords (nm) of multiple atoms using atom_detection, and pixel_to_nm
+
     Parameters
     ----------
-    img: array_like
+
+    img : array_like
         image
-    offset_nm: array_like
+
+    offset_nm : array_like
         XY offset in nm
-    len_nm: array_like
+
+    len_nm : array_like
         XY length of the image in nm
 
-    Return
-    ------
-    atom_nm: array_like
+    Returns
+    -------
+
+    atom_nm : array_like
         STM coordinates of the atoms in nm
+
     """
     atom_pixel = atom_detection(img, np.array([0,0]), np.array([0,0]))
     atom_nm = pixel_to_nm(atom_pixel, img, offset_nm, len_nm)
     return atom_nm
 
-def subtract_plane(im):
+def subtract_plane(im: np.array):
+    """
+    Plane subtract data
+
+    Parameters
+    ----------
+
+    im : array_like
+        2D array of z values
+
+    Returns:
+    --------
+
+    im : array_like
+        2D array of z values with planar fit subtracted
+
+    """
     xPix, yPix = im.shape
     X1, X2 = np.mgrid[:xPix, :yPix]
     nxny = xPix*yPix
     X = np.hstack((np.reshape(X1, (nxny, 1)), np.reshape(X2, (nxny, 1))))
     X = np.hstack((np.ones((nxny, 1)), X))
     YY = np.reshape(im, (nxny,1))
-    theta = np.dot(np.dot(np.linalg.pinv(np.dot(X.transpose(), X)), X.transpose()), YY)
+    inv = np.linalg.pinv(np.dot(X.transpose(), X))
+    theta = np.dot(np.dot(inv, X.transpose()), YY)
     plane = np.reshape(np.dot(X, theta), (xPix, yPix))
     im = im.astype(float)
     im -= np.array(plane).astype(float)
     return im
 
-def get_region_centroids(im, diamond_size=3, sigmaclip=3, show=False):
+def get_region_centroids(im: np.array,
+                         diamond_size: int=3,
+                         sigmaclip: float=3,
+                         show: bool=False):
+    """Get pixels with height above sigma_clip standard deviations of the mean
+
+    Parameters
+    ----------
+
+    im : array_like
+
+    diamond_size : int
+
+    sigmaclip : float
+
+    show : bool
+
+    Returns
+    -------
+
+    c : array_like
+        list of centroid positions [[x1, y1], [x2, y2], ...]
+
+    """
     im = subtract_plane(im)
     #plt.imshow(im)
     #plt.show()
@@ -303,7 +401,3 @@ def get_region_centroids(im, diamond_size=3, sigmaclip=3, show=False):
 
     # remove centroids close to the edge
     return c
-
-
-
-

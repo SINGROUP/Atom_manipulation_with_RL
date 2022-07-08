@@ -1,15 +1,15 @@
 # Atom manipulation with reinforcement learning
 <img src="https://github.com/ccakarolotw/Atom_manipulation_with_RL_new/blob/main/logo.png" alt="drawing" style="width:100px;" align="right"/>
 
-This repository contains codes used in the autonomous atom manipulation project. In this project, we use deep reinforcment learning algorithms including soft actor-critic, hindsight experience replay, and emphsize recent experience replay to automatize atom manipulation in the Createc scanning tunneling microscope system. 
+This repository contains codes used in the autonomous atom manipulation project. In this project, we use deep reinforcement learning algorithms including soft actor-critic, hindsight experience replay, and emphasize recent experience replay to automatize atom manipulation in the Createc scanning tunneling microscope system.
 
-The codes are implemented in python3 and the deep learning algorithms are implemented in pytorch. 
+The codes are implemented in python3 and the deep learning algorithms are implemented in pytorch.
 
 
 ## Usage
 
 ### Training reinforcement learning agent
-Run 
+Run
 `
 single_atom_training.ipynb
 `.
@@ -24,3 +24,7 @@ Run `multiple_atoms_building.ipynb`. The notebook goes through the process to bu
 
 ## Installation
 Use `pip install git+https://github.com/SINGROUP/Atom_manipulation_with_RL.git`.
+
+
+## Citation
+If you use AMRL in a research project, please cite the following paper: arXiv:2203.06975

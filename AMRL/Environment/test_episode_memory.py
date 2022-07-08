@@ -1,4 +1,4 @@
-from episode_memory import Episode_Memory
+from AMRL.Environment.episode_memory import Episode_Memory
 
 
 class TestEpisode_Memory():
@@ -9,7 +9,3 @@ class TestEpisode_Memory():
        em.memory_init(episode=1)
 
        assert(em.episode == 1)
-
-
-
-
