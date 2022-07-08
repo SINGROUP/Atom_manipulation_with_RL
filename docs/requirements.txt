@@ -10,4 +10,3 @@ findiff
 scikit-image
 scikit-learn
 pytest
-pywin32
