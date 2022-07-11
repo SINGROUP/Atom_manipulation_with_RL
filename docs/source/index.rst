@@ -11,10 +11,7 @@ Welcome to Atom manipulation with reinforcement learning ( AMRL )'s documentatio
    :caption: Contents:
 
    intro
-   
-.. autosummary::
-   :toctree: generated
-
+   AMRL
    AMRL.Environment
    AMRL.RL
 
