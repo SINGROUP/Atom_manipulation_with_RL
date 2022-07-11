@@ -1,0 +1,12 @@
+jupyterlab
+matplotlib
+scipy
+pandas
+opencv-python
+torch
+torchvision
+gym
+findiff
+scikit-image
+scikit-learn
+pytest
