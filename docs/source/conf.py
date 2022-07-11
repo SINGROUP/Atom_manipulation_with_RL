@@ -12,9 +12,9 @@
 #
 import os
 import sys
-sys.path.insert(0, os.path.abspath('.'))
-sys.path.insert(0, os.path.abspath('../'))
-sys.path.insert(0, os.path.abspath('../AMRL'))
+# sys.path.insert(0, os.path.abspath('.'))
+# sys.path.insert(0, os.path.abspath('../'))
+# sys.path.insert(0, os.path.abspath('../AMRL'))
 
 
 # -- Project information -----------------------------------------------------
@@ -25,6 +25,7 @@ author = 'I-Ju Chen, Markus Aapro, Abraham Kipnis'
 
 # The full version, including alpha/beta/rc tags
 release = '0.0.0'
+master_doc = 'index'
 
 
 # -- General configuration ---------------------------------------------------
@@ -60,6 +61,7 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 # a list of builtin themes.
 #
 html_theme = 'sphinx_rtd_theme'
+html_logo = '..\..\logo.png'
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
