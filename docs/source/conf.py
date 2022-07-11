@@ -13,7 +13,7 @@
 import os
 import sys
 # sys.path.insert(0, os.path.abspath('.'))
-# sys.path.insert(0, os.path.abspath('../'))
+sys.path.insert(0, os.path.abspath('../../'))
 # sys.path.insert(0, os.path.abspath('../AMRL'))
 
 
@@ -28,6 +28,23 @@ release = '0.0.0'
 master_doc = 'index'
 
 
+
+def run_apidoc(app):
+    """Generate API documentation"""
+    from sphinx.ext import apidoc
+    max_depth = '1'
+    apidoc.main([
+        '../../AMRL',
+        '-o', '.',
+        '-d', max_depth,
+        '--templatedir=_templates/',
+        '--force',
+        '--no-toc'
+    ])
+
+def setup(app):
+    app.connect('builder-inited', run_apidoc)
+
 # -- General configuration ---------------------------------------------------
 
 # Add any Sphinx extension module names here, as strings. They can be
@@ -36,8 +53,11 @@ master_doc = 'index'
 extensions = [
 'sphinx.ext.autodoc',
 'sphinx.ext.viewcode',
-'sphinx.ext.napoleon'
+'sphinx.ext.napoleon',
+'sphinx.ext.autosummary'
 ]
+
+
 
 # Generate automatic API documentation
 autosummary_generate = True
@@ -45,7 +65,12 @@ autosummary_imported_members = True
 autodoc_default_flags = ['members']
 # https://github.com/readthedocs/readthedocs.org/issues/8554
 autodoc_mock_imports = ['win32com'] # since ReadTheDocs compiles on Linux
-
+# See http://blog.rtwilson.com/how-to-make-your-sphinx-documentation-compile-with-readthedocs-when-youre-using-numpy-and-scipy/
+# import mock
+#
+# MOCK_MODULES = ['numpy', 'numpy.ma', 'scipy', 'scipy.stats']
+# for mod_name in MOCK_MODULES:
+#     sys.modules[mod_name] = mock.Mock()
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 
