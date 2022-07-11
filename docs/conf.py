@@ -40,6 +40,7 @@ extensions = [
 autosummary_generate = True
 autosummary_imported_members = True
 autodoc_default_flags = ['members']
+autodoc_mock_imports = ['win32com'] # since ReadTheDocs compiles on Linux
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
