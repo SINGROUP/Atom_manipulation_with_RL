@@ -32,14 +32,11 @@ master_doc = 'index'
 def run_apidoc(app):
     """Generate API documentation"""
     from sphinx.ext import apidoc
-    max_depth = '1'
+    max_depth = '10'
     apidoc.main([
         '../../AMRL',
         '-o', '.',
         '-d', max_depth,
-        '--templatedir=_templates/',
-        '--force',
-        '--no-toc'
     ])
 
 def setup(app):
@@ -86,7 +83,7 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 # a list of builtin themes.
 #
 html_theme = 'sphinx_rtd_theme'
-html_logo = '..\..\logo.png'
+html_logo = '..\..\..\logo.png'
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
