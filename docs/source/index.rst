@@ -7,13 +7,13 @@ Welcome to Atom manipulation with reinforcement learning ( AMRL )'s documentatio
 ==================================================================================
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 10
    :caption: Contents:
 
    intro
    AMRL
-   AMRL.Environment
-   AMRL.RL
+.. AMRL.Environment
+.. AMRL.RL
 
 Indices and tables
 ==================
