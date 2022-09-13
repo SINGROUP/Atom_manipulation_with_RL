@@ -22,13 +22,14 @@ Run `baseline_evaluation.ipynb`. The notebook can be used to evaluate the perfor
 Run `multiple_atoms_building.ipynb`. The notebook goes through the process to build multi-atom structures, including defining the design, dividing the building process into individual atom manipulation episodes through assignment and path planning algorithms, and running a trained RL agent.
 
 ### Read the training data
-The `training data` folder includes
-- the training data collected by used for training the deep reinforcement learning agent
-the training data can be read with the following code
-```import numpy as np
-data = np.load(np_name,allow_pickle=True).item()```
-- the 
 
+The training data collected by used for training the deep reinforcement learning agent are included in the `training data` folder.
+The training data are stored in the Python Dictionary format can be read with the following code
+```
+import numpy as np
+data = np.load('FILE_NAME.npy',allow_pickle=True).item()
+```
+### Load the model weight
 ## Installation
 Use `pip install git+https://github.com/SINGROUP/Atom_manipulation_with_RL.git`.
 
