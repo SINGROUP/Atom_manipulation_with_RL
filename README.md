@@ -44,4 +44,4 @@ Use `pip install git+https://github.com/SINGROUP/Atom_manipulation_with_RL.git`.
 
 
 ## Citation
-If you use AMRL in a research project, please cite the following paper: arXiv:2203.06975
+If you use AMRL in a research project, please cite the following paper: https://doi.org/10.1038/s41467-022-35149-w
